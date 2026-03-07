@@ -13,10 +13,10 @@
 cd /opt/root
 
 # Загрузите скрипт бэкапа
-curl -o backup_config.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/backup_config.sh
+curl -o backup_config.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/backup_config.sh
 
 # Загрузите скрипт очистки
-curl -o cleanup_backups.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/cleanup_backups.sh
+curl -o cleanup_backups.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/cleanup_backups.sh
 
 # Установите права доступа
 chmod 755 backup_config.sh cleanup_backups.sh
@@ -106,7 +106,7 @@ tail -f /opt/etc/bot/error.log
 
 # 2. Обновление
 cd /opt/etc/bot
-curl -O https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/main.py
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/main.py
 # ... другие файлы
 
 # 3. Перезапуск
@@ -301,8 +301,8 @@ cleanup_backups.sh [дни]
 
 Для установки выполните:
 ```bash
-curl -o /opt/root/backup_config.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/backup_config.sh
-curl -o /opt/root/cleanup_backups.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/cleanup_backups.sh
+curl -o /opt/root/backup_config.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/backup_config.sh
+curl -o /opt/root/cleanup_backups.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/cleanup_backups.sh
 chmod 755 /opt/root/backup_config.sh /opt/root/cleanup_backups.sh
 ```
 
