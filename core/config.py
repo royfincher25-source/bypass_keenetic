@@ -35,6 +35,10 @@ class Config:
         if Config._initialized:
             return
         
+        # Если путь не указан, ищем .env в директории бота
+        if env_path is None:
+            env_path = '/opt/etc/bot/.env'
+        
         # Загрузка конфигурации с кэшированием
         env.load(env_path)
         
