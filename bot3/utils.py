@@ -623,3 +623,38 @@ def cleanup_memory():
     """Принудительная очистка памяти (вызывать периодически)"""
     Cache.cleanup()
     gc.collect()
+
+
+# =============================================================================
+# BACKUP (заглушка)
+# =============================================================================
+
+def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progress_msg_id):
+    """Создание бэкапа с параметрами (упрощённая версия)"""
+    try:
+        bot.edit_message_text("⏳ Создание бэкапа...", chat_id, progress_msg_id)
+        
+        # Простое создание бэкапа через скрипт
+        archive_path = f"/opt/root/backup_{time.strftime('%Y%m%d_%H%M%S')}.tar.gz"
+        
+        subprocess.run([
+            "tar", "-czf", archive_path,
+            "-C", "/opt/etc", "bot", "unblock"
+        ], timeout=300, capture_output=True)
+        
+        if os.path.exists(archive_path):
+            bot.edit_message_text("✅ Бэкап создан, отправляю файл...", chat_id, progress_msg_id)
+            with open(archive_path, 'rb') as f:
+                bot.send_document(chat_id, f, caption="✅ Бэкап конфигурации")
+            
+            # Очистка
+            if backup_state.delete_archive:
+                os.remove(archive_path)
+        else:
+            bot.edit_message_text("❌ Не удалось создать бэкап", chat_id, progress_msg_id)
+            
+    except subprocess.TimeoutExpired:
+        bot.edit_message_text("❌ Таймаут создания бэкапа", chat_id, progress_msg_id)
+    except Exception as e:
+        bot.edit_message_text(f"❌ Ошибка: {str(e)}", chat_id, progress_msg_id)
+        log_error(f"Backup error: {e}")
