@@ -159,7 +159,7 @@ if iteration % 100 == 0:
 
 ## 🚀 Инструкция по развёртыванию
 
-### 1. Обновление на роутере
+### Вариант 1: Через GitHub (если репозиторий публичный)
 
 ```bash
 # 1. Остановить бота
@@ -167,14 +167,14 @@ if iteration % 100 == 0:
 
 # 2. Обновить файлы
 cd /opt/etc/bot
-curl -O https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/bot_config.py
-curl -O https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/utils.py
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/bot_config.py
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
 
 # 3. Обновить core модуль
 mkdir -p /opt/etc/bot/core
 cd /opt/etc/bot/core
-curl -O https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/core/env_parser.py
-curl -O https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/core/config.py
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/env_parser.py
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
 
 # 4. Удалить python-dotenv (если установлен)
 pip3 uninstall -y python-dotenv
@@ -187,6 +187,20 @@ pip3 install --no-cache-dir pyTelegramBotAPI==4.27.0 requests
 
 # 7. Проверить память
 ps | grep python
+```
+
+### Вариант 2: Копирование с компьютера (рекомендуется)
+
+```bash
+# На компьютере (PowerShell)
+scp H:\disk_e\dell\bypass_keenetic-main\bot3\bot_config.py root@192.168.1.1:/opt/etc/bot/
+scp H:\disk_e\dell\bypass_keenetic-main\bot3\utils.py root@192.168.1.1:/opt/etc/bot/
+scp -r H:\disk_e\dell\bypass_keenetic-main\core root@192.168.1.1:/opt/etc/bot/
+
+# На роутере
+chmod 755 /opt/etc/bot/*.py
+chmod 755 /opt/etc/bot/core/*.py
+/opt/etc/init.d/S99telegram_bot restart
 ```
 
 ### 2. Проверка производительности
@@ -205,6 +219,26 @@ tail -f /opt/etc/bot/error.log
 **Ожидаемые результаты:**
 - Запуск: **0.5-1.0 сек**
 - Память: **3-5 MB**
+
+---
+
+## 📁 Файлы для развёртывания
+
+**С компьютера (локально):**
+```powershell
+# Копирование файлов
+scp H:\disk_e\dell\bypass_keenetic-main\bot3\bot_config.py root@192.168.1.1:/opt/etc/bot/
+scp H:\disk_e\dell\bypass_keenetic-main\bot3\utils.py root@192.168.1.1:/opt/etc/bot/
+scp -r H:\disk_e\dell\bypass_keenetic-main\core root@192.168.1.1:/opt/etc/bot/
+```
+
+**С GitHub (если публичный репозиторий):**
+```bash
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/bot_config.py
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/env_parser.py
+curl -O https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
+```
 
 ---
 

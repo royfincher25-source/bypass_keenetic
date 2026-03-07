@@ -11,7 +11,14 @@ ssh root@192.168.1.1
 ### 2. Загрузите скрипт
 
 ```bash
-curl -o /opt/root/create_archive.sh https://github.com/royfincher25-source/bypass_keenetic/blob/main/create_archive.sh && chmod 755 /opt/root/create_archive.sh
+
+# 1. Удалите старый файл
+rm -f /opt/root/create_archive.sh
+       
+# 2. Проверьте что удалён
+ls -la /opt/root/create_archive.sh
+
+curl -o /opt/root/create_archive.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/create_archive.sh && chmod 755 /opt/root/create_archive.sh
 ```
 
 ### 3. Запустите
@@ -122,5 +129,14 @@ rm /opt/root/old_backup_*.tar.gz
 ```
 
 ---
+
+📞 Если понадобится восстановить:
+
+1 # На роутере
+     2 cd /opt/root
+     3 tar -xzf backup_2026-03-07_21-05.tar.gz
+     4 cp -r backup_tmp/bot/* /opt/etc/bot/
+     5 cp -r backup_tmp/configs/* /opt/etc/
+     6 /opt/etc/init.d/S99telegram_bot restart
 
 **Всё готово! Просто выполните 3 команды выше.** 🎯
