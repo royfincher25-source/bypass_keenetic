@@ -142,6 +142,9 @@ class EnvConfig:
     def load(self, filepath=None):
         """Загрузка конфигурации"""
         if not self._loaded:
+            # Если путь не указан, используем путь по умолчанию
+            if filepath is None:
+                filepath = '/opt/etc/bot/.env'
             self._cache = load_env_file(filepath)
             self._loaded = True
         return self._cache
