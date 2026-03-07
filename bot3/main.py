@@ -6,6 +6,13 @@ import time
 import telebot
 import subprocess
 import requests.exceptions
+
+# СНАЧАЛА загружаем .env перед импортом bot_config
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from core.env_parser import load_env
+load_env('/opt/etc/bot/.env')
+
+# ТЕПЕРЬ импортируем остальное
 from handlers import setup_handlers
 from utils import log_error, clean_log, check_restart, signal_handler
 import bot_config as config
