@@ -255,8 +255,8 @@ make lint
 
 ## 📞 Поддержка
 
-- **Issues:** [GitHub Issues](https://github.com/g00se72/bypass_keenetic/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/g00se72/bypass_keenetic/discussions)
+- **Issues:** [GitHub Issues](https://github.com/royfincher25-source/bypass_keenetic/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/royfincher25-source/bypass_keenetic/discussions)
 
 ---
 

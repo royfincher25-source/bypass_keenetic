@@ -43,7 +43,7 @@
 
 ```bash
 # 1. Загрузить скрипт бэкапа
-curl -o /opt/root/backup_config.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/backup_config.sh
+curl -o /opt/root/backup_config.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/backup_config.sh
 chmod 755 /opt/root/backup_config.sh
 
 # 2. Создать первый бэкап

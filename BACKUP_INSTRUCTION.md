@@ -10,7 +10,7 @@
 
 ```bash
 # 1. Загрузите скрипт бэкапа
-curl -o /opt/root/backup_config.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/backup_config.sh
+curl -o /opt/root/backup_config.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/backup_config.sh
 chmod 755 /opt/root/backup_config.sh
 
 # 2. Создайте бэкап
@@ -131,8 +131,8 @@ chmod 755 /opt/root/backup_config.sh
 
 # 2. Обновление
 cd /opt/etc/bot
-curl -o main.py https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/main.py
-curl -o utils.py https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/utils.py
+curl -o main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/main.py
+curl -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
 
 # 3. Перезапуск
 /opt/etc/init.d/S99telegram_bot restart
