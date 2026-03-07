@@ -1,10 +1,10 @@
-# g00se72/bypass_keenetic
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/g00se72/bypass_keenetic)
-![GitHub Release Date - Published_At](https://img.shields.io/github/release-date/g00se72/bypass_keenetic)
-![GitHub repo size](https://img.shields.io/github/repo-size/g00se72/bypass_keenetic)
-![GitHub last commit](https://img.shields.io/github/last-commit/g00se72/bypass_keenetic)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/y/g00se72/bypass_keenetic)
-![GitHub top language](https://img.shields.io/github/languages/top/g00se72/bypass_keenetic)
+# royfincher25-source/bypass_keenetic
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/royfincher25-source/bypass_keenetic)
+![GitHub Release Date - Published_At](https://img.shields.io/github/release-date/royfincher25-source/bypass_keenetic)
+![GitHub repo size](https://img.shields.io/github/repo-size/royfincher25-source/bypass_keenetic)
+![GitHub last commit](https://img.shields.io/github/last-commit/royfincher25-source/bypass_keenetic)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/y/royfincher25-source/bypass_keenetic)
+![GitHub top language](https://img.shields.io/github/languages/top/royfincher25-source/bypass_keenetic)
 
 ## Описание проекта
 
@@ -17,19 +17,19 @@
 ## Скриншоты
 | Главное меню | Ключи и мосты | Списки обхода | Установка и удаление |
 |--------------|---------------|---------------|----------------------|
-| ![Главное меню](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/MENU_MAIN.png) | ![Ключи и мосты](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/MENU_VLESS.png) | ![Списки обхода](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/MENU_BYPASS_FILES.png) | ![Установка и удаление](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/install_remove_menu.png) |
+| ![Главное меню](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/MENU_MAIN.png) | ![Ключи и мосты](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/MENU_VLESS.png) | ![Списки обхода](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/MENU_BYPASS_FILES.png) | ![Установка и удаление](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/install_remove_menu.png) |
 
 ---
 
 | Сервисное меню | Обновлений нет | Обновления | DNS Override |
 |----------------|------------|------------------------|--------------|
-| ![Сервисное меню](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/MENU_SERVICE.png) | ![Обновления](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/updates_menu.png) | ![Обновления (состояние)](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/updates_menu(need_update).png) | ![DNS Override](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/dns_override_menu.png) |
+| ![Сервисное меню](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/MENU_SERVICE.png) | ![Обновления](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/updates_menu.png) | ![Обновления (состояние)](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/updates_menu(need_update).png) | ![DNS Override](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/dns_override_menu.png) |
 
 ---
 
 | Бекап меню | Создать бекап | Выбор диска | Удаление архива | Бекап завершен |
 |------------|---------------|-------------|-----------------|----------------|
-| ![Бекап меню](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/backup_menu.png) | ![Создать бекап](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/backup_menu(backup_state).png) | ![Выбор диска](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/drive_selection_menu.png) | ![Удаление архива](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/delete_archive_menu.png) | ![Бекап завершен](https://raw.githubusercontent.com/g00se72/bypass_keenetic/e6698361cfea854c4eb049accd524c012df2c9a6/screens/backup_done.png) |
+| ![Бекап меню](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/backup_menu.png) | ![Создать бекап](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/backup_menu(backup_state).png) | ![Выбор диска](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/drive_selection_menu.png) | ![Удаление архива](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/delete_archive_menu.png) | ![Бекап завершен](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/backup_done.png) |
 
 ## Установка
 
@@ -85,19 +85,19 @@ pip3 install pyTelegramBotAPI==4.27.0
 mkdir -p /opt/etc/bot
 ```
 ```bash
-curl -o /opt/etc/bot/main.py https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/main.py
+curl -o /opt/etc/bot/main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/main.py
 ```
 ```bash
-curl -o /opt/etc/bot/menu.py https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/menu.py
+curl -o /opt/etc/bot/menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/menu.py
 ```
 ```bash
-curl -o /opt/etc/bot/utils.py https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/utils.py
+curl -o /opt/etc/bot/utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
 ```
 ```bash
-curl -o /opt/etc/bot/handlers.py https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/handlers.py
+curl -o /opt/etc/bot/handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/handlers.py
 ```
 ```bash
-curl -o /opt/etc/bot/bot_config.py https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/bot3/bot_config.py
+curl -o /opt/etc/bot/bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/bot_config.py
 ```
 ```bash
 chmod 755 /opt/etc/bot
