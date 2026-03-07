@@ -5,6 +5,7 @@
 # - Кэширование результатов
 # - Lazy loading
 # - Минимальное использование памяти
+# - Использование core модуля для общих функций
 # =============================================================================
 
 import os
@@ -17,7 +18,21 @@ import gc
 from urllib.parse import urlparse, parse_qs
 import base64
 
-# Лёгкие импорты
+# Импорт общих функций из core модуля
+from core import (
+    get_http_session,
+    download_script,
+    log_error,
+    clean_log,
+    get_available_drives,
+    create_backup_with_params,
+    parse_vless_key,
+    generate_config,
+    vless_config,
+    tor_config
+)
+
+# Локальные импорты для обратной совместимости
 import bot_config as config
 
 

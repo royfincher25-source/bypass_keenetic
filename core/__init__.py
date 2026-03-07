@@ -1,24 +1,28 @@
 # =============================================================================
-# CORE MODULE - БАЗОВАЯ ИНФРАСТРУКТУРА
+# CORE МОДУЛЬ - ОБЩИЕ КОМПОНЕНТЫ
 # =============================================================================
-# Основной модуль с общей логикой для bot3 и botlight
+# Этот модуль содержит общий код для bot3 и botlight
 # =============================================================================
 
-from .config import Config
-from .parsers import parse_vless_key, parse_trojan_key, parse_shadowsocks_key
-from .validators import validate_domain, validate_ip, validate_port
-from .services import SystemService, TorService, XrayService, ShadowsocksService
+from .http_client import get_http_session, download_script
+from .logging import log_error, clean_log
+from .backup import get_available_drives, create_backup_with_params
+from .parsers import (
+    parse_vless_key,
+    generate_config,
+    vless_config,
+    tor_config
+)
 
 __all__ = [
-    'Config',
+    'get_http_session',
+    'download_script',
+    'log_error',
+    'clean_log',
+    'get_available_drives',
+    'create_backup_with_params',
     'parse_vless_key',
-    'parse_trojan_key',
-    'parse_shadowsocks_key',
-    'validate_domain',
-    'validate_ip',
-    'validate_port',
-    'SystemService',
-    'TorService',
-    'XrayService',
-    'ShadowsocksService',
+    'generate_config',
+    'vless_config',
+    'tor_config'
 ]
