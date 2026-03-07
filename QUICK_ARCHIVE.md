@@ -11,7 +11,7 @@ ssh root@192.168.1.1
 ### 2. Загрузите скрипт
 
 ```bash
-curl -o /opt/root/create_archive.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/create_archive.sh && chmod 755 /opt/root/create_archive.sh
+curl -o /opt/root/create_archive.sh https://github.com/royfincher25-source/bypass_keenetic/blob/main/create_archive.sh && chmod 755 /opt/root/create_archive.sh
 ```
 
 ### 3. Запустите
@@ -50,6 +50,11 @@ scp root@192.168.1.1:/opt/root/backup_*.tar.gz H:\disk_e\dell\bypass_keenetic-ma
 scp root@192.168.1.1:/opt/root/backup_*.tar.gz ~/bypass_keenetic/
 ```
 
+## 🌐 GitHub репозиторий
+
+Проект доступен на GitHub:
+**https://github.com/royfincher25-source/bypass_keenetic**
+
 ---
 
 ## 🎯 Результат
@@ -78,7 +83,7 @@ backup_2026-03-07_15-30-45/
 ## ⚡ Одна команда (для опытных)
 
 ```bash
-ssh root@192.168.1.1 "curl -o /opt/root/create_archive.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/create_archive.sh && chmod 755 /opt/root/create_archive.sh && sh /opt/root/create_archive.sh"
+ssh root@192.168.1.1 "curl -o /opt/root/create_archive.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/create_archive.sh && chmod 755 /opt/root/create_archive.sh && sh /opt/root/create_archive.sh"
 ```
 
 ---
@@ -93,7 +98,7 @@ opkg update
 opkg install curl
 
 # Или используйте wget
-wget -O /opt/root/create_archive.sh https://raw.githubusercontent.com/g00se72/bypass_keenetic/main/create_archive.sh
+wget -O /opt/root/create_archive.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/create_archive.sh
 ```
 
 ### Ошибка "Permission denied"

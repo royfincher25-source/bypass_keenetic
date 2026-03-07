@@ -66,16 +66,13 @@ echo.
 REM Настройка удалённого репозитория
 echo [4/4] Настройка удалённого репозитория...
 echo.
-echo Введите URL вашего репозитория GitHub:
-echo Пример: https://github.com/royfincher25-source/bypass_keenetic.git
+echo URL репозитория GitHub по умолчанию:
+echo https://github.com/royfincher25-source/bypass_keenetic.git
 echo.
-set /p REPO_URL="URL репозитория: "
+echo Нажмите Enter для использования URL по умолчанию
+set /p REPO_URL="URL репозитория (или нажмите Enter): "
 
-if "%REPO_URL%"=="" (
-    echo [ERROR] URL не введён!
-    pause
-    exit /b 1
-)
+if "%REPO_URL%"=="" set REPO_URL=https://github.com/royfincher25-source/bypass_keenetic.git
 
 REM Проверка наличия remote
 git remote | findstr "origin" >nul
