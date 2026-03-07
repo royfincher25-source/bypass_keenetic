@@ -146,42 +146,71 @@ def signal_handler(sig, frame):
 # Кэш для избежания повторных загрузок
 _script_cache = {}
 
+# Connection pooling для HTTP запросов (экономия памяти и времени)
+_http_session = None
+
+
+def get_http_session():
+    """Получение HTTP сессии с connection pooling"""
+    global _http_session
+    if _http_session is None:
+        import requests
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        
+        _http_session = requests.Session()
+        
+        # Настройка retry logic
+        retry = Retry(
+            total=3,
+            backoff_factor=2,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "POST"]
+        )
+        adapter = HTTPAdapter(max_retries=retry, pool_connections=1, pool_maxsize=5)
+        _http_session.mount("http://", adapter)
+        _http_session.mount("https://", adapter)
+    
+    return _http_session
+
 
 def download_script():
     """
-    Загрузка скрипта с кэшированием.
+    Загрузка скрипта с кэшированием и connection pooling.
     - Проверка версии перед загрузкой
     - Кэширование содержимого
+    - Connection pooling для экономии памяти
     """
     import requests
-    
+
     script_path = config.paths["script_sh"]
     cache_key = 'script_sh'
-    
+
     # Проверка кэша (5 минут)
     if Cache.is_valid(cache_key):
         cached_hash = Cache.get(cache_key)
         # Можно добавить проверку хэша файла
-    
+
     try:
-        # Загрузка с таймаутом
-        response = requests.get(
+        # Загрузка с таймаутом и использованием сессии
+        session = get_http_session()
+        response = session.get(
             f"{config.bot_url}/script.sh",
             timeout=30,
             stream=True  # Потоковая загрузка для экономии памяти
         )
         response.raise_for_status()
-        
+
         # Запись напрямую в файл (без загрузки в память)
         with open(script_path, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
-        
+
         os.chmod(script_path, 0o0755)
-        
+
         # Кэширование
         Cache.set(cache_key, script_path, ttl=300)
-        
+
     except requests.exceptions.Timeout:
         log_error("Ошибка при загрузке скрипта: превышен таймаут")
         raise

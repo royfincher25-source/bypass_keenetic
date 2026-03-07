@@ -35,13 +35,37 @@ def log_error(message):
     with open(config.paths["error_log"], "a", encoding='utf-8') as fl:
         fl.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
 
+# Connection pooling для HTTP запросов
+_http_session = None
+
+def get_http_session():
+    """Получение HTTP сессии с connection pooling"""
+    global _http_session
+    if _http_session is None:
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        
+        _http_session = requests.Session()
+        retry = Retry(
+            total=3,
+            backoff_factor=2,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "POST"]
+        )
+        adapter = HTTPAdapter(max_retries=retry, pool_connections=1, pool_maxsize=5)
+        _http_session.mount("http://", adapter)
+        _http_session.mount("https://", adapter)
+    return _http_session
+
 def download_script():
-    # Загрузка скрипта с установкой прав
+    # Загрузка скрипта с установкой прав и connection pooling
     try:
-        response = requests.get(f"{config.bot_url}/script.sh", timeout=30)
+        session = get_http_session()
+        response = session.get(f"{config.bot_url}/script.sh", timeout=30, stream=True)
         response.raise_for_status()
         with open(config.paths["script_sh"], 'wb') as f:
-            f.write(response.content)
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
         os.chmod(config.paths["script_sh"], 0o0755)
     except requests.exceptions.Timeout:
         log_error("Ошибка при загрузке скрипта: превышен таймаут")
