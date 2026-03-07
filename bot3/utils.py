@@ -567,6 +567,55 @@ def tor_config(bridges, bot=None, chat_id=None):
 
 
 # =============================================================================
+# BACKUP DRIVES
+# =============================================================================
+
+def get_available_drives():
+    """Получение списка доступных дисков для бэкапа без swap разделов"""
+    drives = []
+    current_drive = None
+    current_manufacturer = None
+
+    try:
+        media_output = subprocess.check_output(
+            ["ndmc", "-c", "show media"],
+            text=True,
+            stderr=subprocess.STDOUT
+        )
+    except subprocess.CalledProcessError:
+        return []
+    except Exception:
+        return []
+
+    for raw_line in media_output.splitlines():
+        stripped = raw_line.strip()
+
+        if stripped.startswith("manufacturer:"):
+            current_manufacturer = stripped.split(":", 1)[1].strip()
+
+        elif stripped.startswith("uuid:"):
+            if current_drive:
+                drives.append(current_drive)
+            uuid = stripped.split(":", 1)[1].strip()
+            current_drive = {'uuid': uuid, 'path': f"/tmp/mnt/{uuid}"}
+
+        elif stripped.startswith("label:") and current_drive is not None:
+            current_drive['label'] = stripped.split(":", 1)[1].strip()
+
+        elif stripped.startswith("fstype:") and current_drive is not None:
+            fstype = stripped.split(":", 1)[1].strip()
+            if fstype == "swap":
+                current_drive = None
+            else:
+                current_drive['fstype'] = fstype
+
+    if current_drive:
+        drives.append(current_drive)
+
+    return drives
+
+
+# =============================================================================
 # ОЧИСТКА ПАМЯТИ
 # =============================================================================
 
