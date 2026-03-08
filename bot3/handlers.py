@@ -457,14 +457,25 @@ def setup_handlers(bot):
             return
         name, init_script = services_map[service_name]
         status = "включение" if enable else "выключение"
-        bot.answer_callback_query(call.id, f"⏳ {name} {status}...")
+        
+        # Показываем уведомление в процессе
+        bot.answer_callback_query(call.id, f"⏳ {name} {status}...", show_alert=False)
+        
         try:
             cmd = [init_script, 'start' if enable else 'stop']
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
             if result.returncode == 0:
-                bot.answer_callback_query(call.id, f"✅ {name} {'включён' if enable else 'выключен'}", show_alert=False)
+                # Получаем новую статистику и обновляем сообщение
                 stats = get_stats()
-                bot.edit_message_text(format_stats_message(stats), call.message.chat.id, call.message.message_id, reply_markup=create_stats_keyboard(stats))
+                bot.edit_message_text(
+                    format_stats_message(stats),
+                    call.message.chat.id,
+                    call.message.message_id,
+                    reply_markup=create_stats_keyboard(stats)
+                )
+                # Показываем результат после обновления
+                bot.answer_callback_query(call.id, f"✅ {name} {'включён' if enable else 'выключен'}", show_alert=False)
             else:
                 error = result.stderr.strip() or result.stdout.strip() or "Неизвестная ошибка"
                 bot.answer_callback_query(call.id, f"❌ Ошибка: {error}", show_alert=True)
