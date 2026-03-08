@@ -14,7 +14,7 @@ load_env('/opt/etc/bot/.env')
 
 # ТЕПЕРЬ импортируем остальное
 from handlers import setup_handlers
-from utils import log_error, clean_log, check_restart, signal_handler
+from utils import log_error, clean_log, check_restart, signal_handler, cleanup_memory
 import bot_config as config
 
 if not config.token or config.token.strip() == "" or ":" not in config.token or len(config.token) < 10:
@@ -43,8 +43,15 @@ if __name__ == "__main__":
     # Параметры polling: long_polling_timeout=30 (ожидание от Telegram),
     # timeout=35 (общий HTTP таймаут), interval=1 (задержка при ошибке)
     restart_count = 0
+    cleanup_counter = 0
     while restart_count < config.MAX_RESTARTS:
         try:
+            # Очистка памяти каждые 100 итераций
+            cleanup_counter += 1
+            if cleanup_counter >= 100:
+                cleanup_memory()
+                cleanup_counter = 0
+            
             bot.infinity_polling(long_polling_timeout=30, timeout=35, interval=1)
         except (telebot.apihelper.ApiException, requests.exceptions.RequestException) as err:
             log_error(f"Ошибка соединения или Telegram API: {str(err)}")

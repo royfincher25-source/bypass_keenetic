@@ -732,3 +732,10 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
     except Exception as e:
         bot.edit_message_text(f"❌ Ошибка: {str(e)}", chat_id, progress_msg_id)
         log_error(f"Backup error: {e}")
+
+
+def cleanup_memory():
+    """Периодическая очистка памяти"""
+    import gc
+    Cache.cleanup()
+    gc.collect()
