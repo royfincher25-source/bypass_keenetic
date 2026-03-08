@@ -55,7 +55,7 @@ def setup_handlers(bot):
     def handle_bypass_list_menu(message):
         filepath = f"{config.paths['unblock_dir']}{state.selected_file}.txt"
         if message.text == "📄 Показать список":
-            sites = sorted(load_bypass_list(filepath))
+            sites = load_bypass_list(filepath)
             text = "Список пуст" if not sites else "\n".join(sites)
             send_long_message(message.chat.id, text)
             bot.send_message(message.chat.id, "Меню " + state.selected_file, reply_markup=get_menu_bypass_list().markup)
@@ -69,7 +69,11 @@ def setup_handlers(bot):
         mylist = load_bypass_list(filepath)
         k = len(mylist)
         if len(message.text) > 1:
-            mylist.update(message.text.split('\n'))
+            # Добавляем новые элементы, сохраняя порядок
+            for item in message.text.split('\n'):
+                item = item.strip()
+                if item and item not in mylist:
+                    mylist.append(item)
         save_bypass_list(filepath, mylist)
         if k != len(mylist):
             bot.send_message(message.chat.id, "✅ Успешно добавлено, применяю изменения...")
@@ -82,7 +86,9 @@ def setup_handlers(bot):
         filepath = f"{config.paths['unblock_dir']}{state.selected_file}.txt"
         mylist = load_bypass_list(filepath)
         k = len(mylist)
-        mylist.difference_update(message.text.split('\n'))
+        # Удаляем элементы, сохраняя порядок
+        to_remove = [item.strip() for item in message.text.split('\n') if item.strip()]
+        mylist = [item for item in mylist if item not in to_remove]
         save_bypass_list(filepath, mylist)
         if k != len(mylist):
             bot.send_message(message.chat.id, "✅ Успешно удалено, применяю изменения...")

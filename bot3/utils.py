@@ -274,9 +274,10 @@ def load_bypass_list(filepath):
     Загрузка списка обхода с кэшированием.
     - Кэш на 1 минуту
     - Чтение только при изменении
+    - Поддержка комментариев (#)
     """
     cache_key = f'bypass:{filepath}'
-    
+
     # Проверка кэша
     if Cache.is_valid(cache_key):
         cached = Cache.get(cache_key)
@@ -287,42 +288,46 @@ def load_bypass_list(filepath):
                 return cached['data']
         except:
             pass
-    
+
     # Загрузка из файла
     if not os.path.exists(filepath):
-        return set()
-    
+        return []
+
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
-            data = set(line.strip() for line in f if line.strip())
-        
+            # Сохраняем порядок строк, пропускаем комментарии и пустые строки
+            data = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+
         # Кэширование
         try:
             mtime = os.path.getmtime(filepath)
         except:
             mtime = time.time()
-        
+
         Cache.set(cache_key, {'data': data, 'mtime': mtime}, ttl=60)
-        
+
         return data
     except:
-        return set()
+        return []
 
 
 def save_bypass_list(filepath, sites):
     """
     Сохранение списка обхода.
+    - Сохранение в исходном порядке (без сортировки)
+    - Поддержка комментариев (#)
     - Очистка кэша после сохранения
     """
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(sorted(sites)))
-        
+            # Сохраняем в исходном порядке
+            f.write('\n'.join(sites))
+
         # Очистка кэша для этого файла
         cache_key = f'bypass:{filepath}'
         Cache._cache.pop(cache_key, None)
         Cache._timestamps.pop(cache_key, None)
-        
+
     except Exception as e:
         log_error(f"Ошибка при сохранении списка обхода: {str(e)}")
         raise
