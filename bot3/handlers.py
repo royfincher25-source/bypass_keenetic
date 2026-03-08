@@ -459,6 +459,15 @@ def setup_handlers(bot):
                         bot.edit_message_text(f'⚠️ {name} запущен, но статус не подтверждён. Проверьте вручную.', msg.chat.id, msg.message_id)
                         return
             
+            # После выключения тоже проверяем статус
+            if not enable and result.returncode == 0:
+                time.sleep(1)
+                status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=10)
+                if status_result.returncode == 0:
+                    log_error(f"{name} not stopped, status still shows running")
+                    result.returncode = 1  # Помечаем как ошибку
+                    result.stdout = "Сервис не остановлен"
+            
             if result.returncode == 0:
                 bot.edit_message_text(f'✅ {name} {"включён" if enable else "выключен"}', msg.chat.id, msg.message_id)
             else:
