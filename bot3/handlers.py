@@ -211,11 +211,13 @@ def setup_handlers(bot):
             'bot_uptime': 'N/A',
             'restart_count': 0,
             'tor_status': 'N/A',
-            'vless_status': 'N/A'
+            'vless_status': 'N/A',
+            'trojan_status': 'N/A',
+            'shadowsocks_status': 'N/A'
         }
-        
+
         bot_pid = os.getpid()
-        
+
         try:
             with open(f'/proc/{bot_pid}/status', 'r') as f:
                 for line in f:
@@ -224,7 +226,7 @@ def setup_handlers(bot):
                         break
         except Exception:
             pass
-        
+
         try:
             meminfo = subprocess.check_output(['cat', '/proc/meminfo'], text=True)
             for line in meminfo.splitlines():
@@ -235,7 +237,7 @@ def setup_handlers(bot):
                     break
         except Exception:
             pass
-        
+
         try:
             uptime_seconds = float(subprocess.check_output(['cat', '/proc/uptime'], text=True).split()[0])
             hours = int(uptime_seconds // 3600)
@@ -243,21 +245,25 @@ def setup_handlers(bot):
             stats['bot_uptime'] = f"{hours}ч {minutes}мин"
         except Exception:
             pass
-        
+
         stats['restart_count'] = config.MAX_RESTARTS
+
+        # Проверка всех сервисов
+        services = [
+            ('Tor', config.services["tor_restart"][0], 'tor_status'),
+            ('VLESS', config.services["vless_restart"][0], 'vless_status'),
+            ('Trojan', config.services["trojan_restart"][0], 'trojan_status'),
+            ('Shadowsocks', config.services["shadowsocks_restart"][0], 'shadowsocks_status')
+        ]
         
-        for service_name, init_script in [('Tor', config.services["tor_restart"][0]), ('VLESS', config.services["vless_restart"][0])]:
+        for service_name, init_script, stat_key in services:
             try:
                 result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=5)
                 status = '✅' if result.returncode == 0 else '❌'
             except Exception:
                 status = '❓'
-            
-            if service_name == 'Tor':
-                stats['tor_status'] = status
-            else:
-                stats['vless_status'] = status
-        
+            stats[stat_key] = status
+
         return stats
 
     def create_stats_keyboard():
@@ -274,8 +280,11 @@ def setup_handlers(bot):
             f"💻 Система: {stats['system_ram_free_mb']:.0f}/{stats['system_ram_total_mb']:.0f} MB свободно\n"
             f"⏱️ Uptime: {stats['bot_uptime']}\n"
             f"🔄 Перезапусков: {stats['restart_count']}\n\n"
-            f"🔵 Tor: {stats['tor_status']}\n"
-            f"🔷 VLESS: {stats['vless_status']}"
+            f"🔵 Сервисы:\n"
+            f"  Tor: {stats['tor_status']}\n"
+            f"  VLESS: {stats['vless_status']}\n"
+            f"  Trojan: {stats['trojan_status']}\n"
+            f"  Shadowsocks: {stats['shadowsocks_status']}"
         )
 
     def handle_stats(chat_id):
