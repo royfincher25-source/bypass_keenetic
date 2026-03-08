@@ -246,9 +246,10 @@ def download_script():
         raise
 
 def download_bot_files():
-    bot_files = ['handlers.py', 'menu.py', 'utils.py', 'main.py']
+    """Загрузка файлов бота с обновлением version.md"""
+    bot_files = ['handlers.py', 'menu.py', 'utils.py', 'main.py', 'version.md']
     bot_dir = os.path.dirname(__file__)
-    
+
     for filename in bot_files:
         try:
             url = f"{config.bot_url}/{filename}"
