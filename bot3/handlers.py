@@ -575,15 +575,15 @@ def setup_handlers(bot):
         service_name, action_type = parts
         enable = (action_type == "on")
         services_map = {
-            'tor': ("🔵 Tor", config.services["tor_restart"][0]),
-            'vless': ("🔷 VLESS", config.services["vless_restart"][0]),
-            'trojan': ("🟡 Trojan", config.services["trojan_restart"][0]),
-            'ss': ("🟢 Shadowsocks", config.services["shadowsocks_restart"][0])
+            'tor': ("🔵 Tor", config.services["tor_restart"][0], 'tor_status'),
+            'vless': ("🔷 VLESS", config.services["vless_restart"][0], 'vless_status'),
+            'trojan': ("🟡 Trojan", config.services["trojan_restart"][0], 'trojan_status'),
+            'ss': ("🟢 Shadowsocks", config.services["shadowsocks_restart"][0], 'shadowsocks_status')
         }
         if service_name not in services_map:
             bot.answer_callback_query(call.id, "❌ Неизвестный сервис", show_alert=True)
             return
-        name, init_script = services_map[service_name]
+        name, init_script, stat_key = services_map[service_name]
         status = "включение" if enable else "выключение"
 
         # Показываем уведомление в процессе
@@ -594,8 +594,18 @@ def setup_handlers(bot):
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
             if result.returncode == 0:
-                # Получаем новую статистику с проверкой сервисов (после изменения статуса)
-                stats = get_stats(refresh_services=True)
+                # Получаем статистику без проверки сервисов (быстро)
+                stats = get_stats(refresh_services=False)
+                
+                # Проверяем статус только что изменённого сервиса
+                try:
+                    status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
+                    new_status = '✅' if status_result.returncode == 0 else '❌'
+                    # Обновляем статус только этого сервиса
+                    stats[stat_key] = new_status
+                except:
+                    pass  # Оставляем как есть
+                
                 bot.edit_message_text(
                     format_stats_message(stats),
                     call.message.chat.id,
