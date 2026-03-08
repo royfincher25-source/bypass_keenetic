@@ -712,7 +712,7 @@ def setup_handlers(bot):
                 format_stats_message(stats),
                 call.message.chat.id,
                 call.message.message_id,
-                reply_markup=create_stats_keyboard()
+                reply_markup=create_stats_keyboard(stats)
             )
         except Exception as e:
             # Игнорируем ошибку "message is not modified" (Telegram API error 400)
