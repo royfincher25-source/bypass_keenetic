@@ -1,6 +1,7 @@
 from telebot import types
 import bot_config as config
 import os
+import subprocess
 
 class Menu:
     __slots__ = ['name', 'markup', 'level', 'back_level']
@@ -138,31 +139,34 @@ def get_menu_remove_bypass():
     return Menu("➖ Удалить из списка", create_menu([["🔙 Назад"]]), 4, 2)
 
 def get_menu_keys_bridges():
-    """Меню ключей и мостов — показывает только настроенные сервисы"""
+    """Меню ключей и мостов — показывает только активные сервисы"""
     buttons = []
-    
-    # Проверяем наличие конфигов сервисов
-    has_tor = os.path.exists(config.paths["tor_config"])
-    has_vless = os.path.exists(config.paths["vless_config"])
-    has_trojan = os.path.exists(config.paths["trojan_config"])
-    has_shadowsocks = os.path.exists(config.paths["shadowsocks_config"])
-    
-    # Формируем кнопки только для настроенных сервисов
-    service_buttons = []
-    if has_tor:
-        service_buttons.append("Tor")
-    if has_vless:
-        service_buttons.append("Vless")
-    if has_trojan:
-        service_buttons.append("Trojan")
-    if has_shadowsocks:
-        service_buttons.append("Shadowsocks")
-    
-    if service_buttons:
-        buttons.append(service_buttons)
+
+    # Проверяем статус сервисов через init скрипты
+    def is_service_active(init_script):
+        try:
+            result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
+            return result.returncode == 0
+        except:
+            return False
+
+    # Проверяем активные сервисы
+    active_services = []
+    if is_service_active(config.services["tor_restart"][0]):
+        active_services.append("Tor")
+    if is_service_active(config.services["vless_restart"][0]):
+        active_services.append("Vless")
+    if is_service_active(config.services["trojan_restart"][0]):
+        active_services.append("Trojan")
+    if is_service_active(config.services["shadowsocks_restart"][0]):
+        active_services.append("Shadowsocks")
+
+    # Формируем кнопки только для активных сервисов
+    if active_services:
+        buttons.append(active_services)
     else:
-        buttons.append(["Нет настроенных сервисов"])
-    
+        buttons.append(["Нет активных сервисов"])
+
     buttons.append(["🔙 Назад"])
     return Menu("🔑 Ключи и мосты", create_menu(buttons), 5, 0)
 
