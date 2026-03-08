@@ -428,21 +428,38 @@ def setup_handlers(bot):
         status = "включение" if enable else "выключение"
         msg = bot.send_message(message.chat.id, f'⏳ {name} {status}...')
         try:
+            # Проверяем существование скрипта
+            if not os.path.exists(init_script):
+                log_error(f"Script not found: {init_script}")
+                bot.edit_message_text(f'❌ {name}: скрипт {init_script} не найден', msg.chat.id, msg.message_id)
+                return
+            
             # Пробуем start/stop
             cmd = [init_script, 'start' if enable else 'stop']
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             
             # Если не сработало, пробуем restart (для некоторых сервисов)
             if result.returncode != 0 and enable:
+                log_error(f"Start failed for {name}, trying restart: {result.stderr}")
                 cmd = [init_script, 'restart']
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            # Если всё ещё ошибка, пробуем для Trojan special case
+            if result.returncode != 0 and service_name == 'trojan':
+                # Trojan может требовать установку через opkg
+                log_error(f"Trojan control failed, checking installation...")
+                check_result = subprocess.run(['opkg', 'list-installed', '|', 'grep', 'trojan'], 
+                                           capture_output=True, text=True, shell=True, timeout=10)
+                if not check_result.stdout:
+                    bot.edit_message_text(f'❌ {name}: не установлен. Установите через меню', msg.chat.id, msg.message_id)
+                    return
             
             if result.returncode == 0:
                 bot.edit_message_text(f'✅ {name} {"включён" if enable else "выключен"}', msg.chat.id, msg.message_id)
             else:
                 error = result.stderr.strip() or result.stdout.strip() or "Неизвестная ошибка"
                 log_error(f"Service control error ({name}): {error}")
-                bot.edit_message_text(f'❌ Ошибка: {error}', msg.chat.id, msg.message_id)
+                bot.edit_message_text(f'❌ {name}: {error}', msg.chat.id, msg.message_id)
         except subprocess.TimeoutExpired:
             bot.edit_message_text(f'❌ Таймаут операции ({name})', msg.chat.id, msg.message_id)
         except Exception as e:
