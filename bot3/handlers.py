@@ -251,7 +251,7 @@ def setup_handlers(bot):
         msg = bot.send_message(chat_id, service_update_info, reply_markup=inline_keyboard)
         state.last_stats_message_id = msg.message_id  # Сохраняем для закрытия
 
-    # Глобальный кэш для статусов сервисов
+    # Кэш для статусов сервисов (в области setup_handlers)
     _service_status_cache = {
         'tor_status': '❓',
         'vless_status': '❓',
@@ -268,8 +268,8 @@ def setup_handlers(bot):
             refresh_services: Если True — проверять статусы сервисов (медленно)
                              Если False — пропустить проверку (быстро)
         """
-        global _service_status_cache
-        
+        nonlocal _service_status_cache
+
         stats = {
             'bot_ram_mb': 0,
             'system_ram_total_mb': 0,
@@ -428,10 +428,14 @@ def setup_handlers(bot):
             except:
                 pass
         
-        # При открытии статистики проверяем статусы сервисов
-        stats = get_stats(refresh_services=True)
-        msg = bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
-        state.last_stats_message_id = msg.message_id  # Сохраняем ID сообщения
+        try:
+            # При открытии статистики проверяем статусы сервисов
+            stats = get_stats(refresh_services=True)
+            msg = bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
+            state.last_stats_message_id = msg.message_id  # Сохраняем ID сообщения
+        except Exception as e:
+            log_error(f"Error opening stats: {e}")
+            bot.send_message(chat_id, f"❌ Ошибка открытия статистики: {e}")
 
     def toggle_dns_override(chat_id, enable: bool):
         command = ["ndmc", "-c", "opkg dns-override"] if enable else ["ndmc", "-c", "no opkg dns-override"]
