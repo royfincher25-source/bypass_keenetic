@@ -251,25 +251,37 @@ def setup_handlers(bot):
         msg = bot.send_message(chat_id, service_update_info, reply_markup=inline_keyboard)
         state.last_stats_message_id = msg.message_id  # Сохраняем для закрытия
 
+    # Глобальный кэш для статусов сервисов
+    _service_status_cache = {
+        'tor_status': '❓',
+        'vless_status': '❓',
+        'trojan_status': '❓',
+        'shadowsocks_status': '❓',
+        'vpn_status': '➖'
+    }
+
     def get_stats(refresh_services=False):
         """
         Получение статистики.
-        
+
         Args:
             refresh_services: Если True — проверять статусы сервисов (медленно)
                              Если False — пропустить проверку (быстро)
         """
+        global _service_status_cache
+        
         stats = {
             'bot_ram_mb': 0,
             'system_ram_total_mb': 0,
             'system_ram_free_mb': 0,
             'bot_uptime': 'N/A',
             'restart_count': 0,
-            'tor_status': 'N/A',
-            'vless_status': 'N/A',
-            'trojan_status': 'N/A',
-            'shadowsocks_status': 'N/A',
-            'vpn_status': 'N/A'
+            # Используем кэш статусов
+            'tor_status': _service_status_cache['tor_status'],
+            'vless_status': _service_status_cache['vless_status'],
+            'trojan_status': _service_status_cache['trojan_status'],
+            'shadowsocks_status': _service_status_cache['shadowsocks_status'],
+            'vpn_status': _service_status_cache['vpn_status']
         }
 
         bot_pid = os.getpid()
@@ -322,6 +334,7 @@ def setup_handlers(bot):
                 except Exception:
                     status = '❓'
                 stats[stat_key] = status
+                _service_status_cache[stat_key] = status  # Обновляем кэш
 
             # Проверка VPN (через ndmc, так как нет init скрипта)
             try:
@@ -337,12 +350,15 @@ def setup_handlers(bot):
                     )
                     if result.returncode == 0 and result.stdout.strip():
                         stats['vpn_status'] = '✅'
+                        _service_status_cache['vpn_status'] = '✅'
                     else:
                         # Файлы есть, но VPN не активен
                         stats['vpn_status'] = '⚠️'  # Предупреждение
+                        _service_status_cache['vpn_status'] = '⚠️'
                 else:
                     # VPN файлов нет — показываем статус "не настроен"
                     stats['vpn_status'] = '➖'
+                    _service_status_cache['vpn_status'] = '➖'
             except Exception:
                 stats['vpn_status'] = '❓'
 
