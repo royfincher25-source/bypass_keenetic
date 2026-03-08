@@ -128,6 +128,8 @@ def setup_handlers(bot):
             set_menu_and_reply(message.chat.id, get_menu_vless(), "🔑 Вставьте ключ Vless")
         elif message.text == 'Trojan':
             set_menu_and_reply(message.chat.id, get_menu_trojan(), "🔑 Вставьте ключ Trojan")
+        elif message.text == 'Нет активных сервисов':
+            bot.send_message(message.chat.id, "ℹ️ Сначала включите любой сервис через /stats")
 
     def update_service(chat_id, service_name, config_func, restart_cmd):
         try:
