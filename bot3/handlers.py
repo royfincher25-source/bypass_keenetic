@@ -452,6 +452,10 @@ def setup_handlers(bot):
             process.kill()
             bot.edit_message_text('❌ Превышен таймаут операции (5 минут)', chat_id, msg.message_id)
             log_error(f"Timeout expired for update script")
+        
+        bot.edit_message_text('✅ Бот обновлён! Перезапуск...', chat_id, msg.message_id)
+        time.sleep(2)
+        subprocess.Popen([config.paths["init_bot"], "restart"])
 
     @bot.callback_query_handler(func=lambda call: call.data == "install")
     def handle_install_callback(call):

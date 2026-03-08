@@ -10,7 +10,7 @@ from menu import (
     create_updates_menu, create_install_remove_menu
 )
 from utils import (
-    download_script, vless_config, tor_config, get_available_drives, create_backup_with_params
+    download_script, download_bot_files, vless_config, tor_config, get_available_drives, create_backup_with_params
 )
 
 class BotState:
@@ -337,6 +337,10 @@ def setup_handlers(bot):
             process.kill()
             bot.edit_message_text('❌ Превышен таймаут операции (5 минут)', chat_id, msg.message_id)
             log_error(f"Timeout expired for update script")
+        
+        bot.edit_message_text('✅ Бот обновлён! Перезапуск...', chat_id, msg.message_id)
+        time.sleep(2)
+        subprocess.Popen([config.paths["init_bot"], "restart"])
 
     @bot.callback_query_handler(func=lambda call: call.data == "install")
     def handle_install_callback(call):
