@@ -295,9 +295,7 @@ def setup_handlers(bot):
             f"  🔵 Tor: {stats['tor_status']}\n"
             f"  🔷 VLESS: {stats['vless_status']}\n"
             f"  🟡 Trojan: {stats['trojan_status']}\n"
-            f"  🟢 Shadowsocks: {stats['shadowsocks_status']}\n\n"
-            f"ℹ️ Управление: /tor_on, /tor_off, /vless_on, /vless_off,\n"
-            f"   /trojan_on, /trojan_off, /ss_on, /ss_off"
+            f"  🟢 Shadowsocks: {stats['shadowsocks_status']}"
         )
 
     def create_stats_keyboard(stats):
