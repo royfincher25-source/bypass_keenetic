@@ -45,6 +45,7 @@ def create_button(text, callback_data):
     return types.InlineKeyboardButton(text, callback_data=callback_data)
 
 def create_bypass_files_menu():
+    """Создание меню выбора файлов обхода"""
     dirname = config.paths["unblock_dir"]
     buttons = []
     if os.path.exists(dirname) and os.listdir(dirname):
@@ -53,8 +54,7 @@ def create_bypass_files_menu():
     else:
         buttons.append(["Нет доступных файлов"])
     buttons.append(["🔙 Назад"])
-    MENU_BYPASS_FILES.markup = create_menu(buttons)
-    return MENU_BYPASS_FILES.markup
+    return create_menu(buttons)
 
 def create_backup_menu(backup_state):
     markup = types.InlineKeyboardMarkup(row_width=2)

@@ -34,8 +34,8 @@ def setup_handlers(bot):
         bot.send_message(chat_id, text, reply_markup=markup if markup else new_menu.markup)
 
     def go_to_bypass_files(chat_id):
-        create_bypass_files_menu()
-        set_menu_and_reply(chat_id, get_menu_bypass_files())
+        markup = create_bypass_files_menu()
+        set_menu_and_reply(chat_id, get_menu_bypass_files(), markup=markup)
 
     def handle_bypass_files_selection(message):
         state.selected_file = message.text
