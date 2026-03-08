@@ -87,7 +87,7 @@ def create_install_remove_menu():
 
 MENU_MAIN = Menu("🤖 Добро пожаловать в меню!", create_menu([
     ["🔑 Ключи и мосты", "⚙️ Сервис"],
-    ["📲 Установка и удаление"]
+    ["📊 Статистика", "📲 Установка и удаление"]
 ]), 0)
 
 MENU_KEYS_BRIDGES = Menu("🔑 Ключи и мосты", create_menu([
