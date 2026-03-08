@@ -404,17 +404,6 @@ def setup_handlers(bot):
         else:
             service_buttons.append(types.InlineKeyboardButton("🟢 SS: ВЫКЛ ❌", callback_data="service_ss_on"))
 
-        # VPN кнопка (только статус, без управления)
-        vpn_status_emoji = stats['vpn_status']
-        if vpn_status_emoji == '✅':
-            service_buttons.append(types.InlineKeyboardButton("🔷 VPN: ВКЛ ✅", callback_data="service_vpn_info"))
-        elif vpn_status_emoji == '⚠️':
-            service_buttons.append(types.InlineKeyboardButton("⚠️ VPN: Файлы есть", callback_data="service_vpn_info"))
-        elif vpn_status_emoji == '➖':
-            service_buttons.append(types.InlineKeyboardButton("➖ VPN: Не настроен", callback_data="service_vpn_info"))
-        else:
-            service_buttons.append(types.InlineKeyboardButton("❓ VPN: Неизвестно", callback_data="service_vpn_info"))
-
         markup.add(*service_buttons)
         markup.add(types.InlineKeyboardButton("🔄 Обновить", callback_data="stats_refresh"))
         markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="menu_main"))
@@ -590,20 +579,7 @@ def setup_handlers(bot):
     @bot.callback_query_handler(func=lambda call: call.data.startswith("service_"))
     def handle_service_control(call):
         action = call.data.replace("service_", "")
-        
-        # Обработка VPN info
-        if action == "vpn_info":
-            bot.answer_callback_query(
-                call.id,
-                "ℹ️ VPN управляется через роутер Keenetic.\n\n"
-                "Для использования VPN:\n"
-                "1. Создайте файл vpn-<название>.txt\n"
-                "2. Добавьте домены/IP для обхода\n"
-                "3. Настройте VPN в веб-интерфейсе роутера",
-                show_alert=True
-            )
-            return
-        
+
         parts = action.rsplit('_', 1)
         if len(parts) != 2:
             bot.answer_callback_query(call.id, "❌ Неверная команда", show_alert=True)

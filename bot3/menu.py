@@ -138,10 +138,33 @@ def get_menu_remove_bypass():
     return Menu("➖ Удалить из списка", create_menu([["🔙 Назад"]]), 4, 2)
 
 def get_menu_keys_bridges():
-    return Menu("🔑 Ключи и мосты", create_menu([
-        ["Tor", "Vless", "Trojan", "Shadowsocks"],
-        ["🔙 Назад"]
-    ]), 5, 0)
+    """Меню ключей и мостов — показывает только настроенные сервисы"""
+    buttons = []
+    
+    # Проверяем наличие конфигов сервисов
+    has_tor = os.path.exists(config.paths["tor_config"])
+    has_vless = os.path.exists(config.paths["vless_config"])
+    has_trojan = os.path.exists(config.paths["trojan_config"])
+    has_shadowsocks = os.path.exists(config.paths["shadowsocks_config"])
+    
+    # Формируем кнопки только для настроенных сервисов
+    service_buttons = []
+    if has_tor:
+        service_buttons.append("Tor")
+    if has_vless:
+        service_buttons.append("Vless")
+    if has_trojan:
+        service_buttons.append("Trojan")
+    if has_shadowsocks:
+        service_buttons.append("Shadowsocks")
+    
+    if service_buttons:
+        buttons.append(service_buttons)
+    else:
+        buttons.append(["Нет настроенных сервисов"])
+    
+    buttons.append(["🔙 Назад"])
+    return Menu("🔑 Ключи и мосты", create_menu(buttons), 5, 0)
 
 def get_menu_tor():
     return Menu("Tor", create_menu([["🔙 Назад"]]), 8, 5)
