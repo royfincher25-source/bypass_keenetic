@@ -447,20 +447,18 @@ def setup_handlers(bot):
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
                 log_error(f"Restart result: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
             
-            # Проверяем статус после включения
-            if enable and result.returncode == 0:
+            # Проверяем статус после включения (кроме Trojan - у него могут быть проблемы со status)
+            if enable and result.returncode == 0 and service_name != 'trojan':
                 time.sleep(2)  # Ждём запуска
                 status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=10)
                 log_error(f"Status check: returncode={status_result.returncode}, output={status_result.stdout}")
                 if status_result.returncode != 0:
                     log_error(f"{name} started but status check failed")
-                    # Для Trojan это может быть нормально, показываем предупреждение
-                    if service_name == 'trojan':
-                        bot.edit_message_text(f'⚠️ {name} запущен, но статус не подтверждён. Проверьте вручную.', msg.chat.id, msg.message_id)
-                        return
+                    bot.edit_message_text(f'⚠️ {name} запущен, но статус не подтверждён. Проверьте вручную.', msg.chat.id, msg.message_id)
+                    return
             
-            # После выключения тоже проверяем статус
-            if not enable and result.returncode == 0:
+            # После выключения проверяем статус (кроме Trojan)
+            if not enable and result.returncode == 0 and service_name != 'trojan':
                 time.sleep(1)
                 status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=10)
                 if status_result.returncode == 0:
