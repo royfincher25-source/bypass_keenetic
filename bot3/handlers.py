@@ -354,8 +354,17 @@ def setup_handlers(bot):
         if message.from_user.username not in config.usernames:
             bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
             return
-        # Эмулируем нажатие кнопки обновления
-        call = type('obj', (object,), {'message': message, 'data': 'trigger_update'})
+        
+        # Отправляем сообщение и передаём его message_id в handle_update
+        msg = bot.send_message(message.chat.id, '⏳ Запуск обновления...')
+        # Эмулируем нажатие кнопки обновления с правильным message_id
+        call = type('obj', (object,), {
+            'message': message,
+            'data': 'trigger_update',
+            'from_user': message.from_user
+        })
+        # Создаем фейковый message_id для редактирования
+        call.message.message_id = msg.message_id
         handle_update(call)
 
     @bot.message_handler(content_types=['text'])
@@ -440,7 +449,14 @@ def setup_handlers(bot):
     @bot.callback_query_handler(func=lambda call: call.data == "trigger_update")
     def handle_update(call):
         chat_id = call.message.chat.id
-        bot.edit_message_reply_markup(chat_id=chat_id, message_id=call.message.message_id, reply_markup=None)
+        
+        # Пытаемся скрыть кнопку обновления (игнорируем ошибку если нельзя редактировать)
+        try:
+            bot.edit_message_reply_markup(chat_id=chat_id, message_id=call.message.message_id, reply_markup=None)
+        except Exception as e:
+            if "message can't be edited" not in str(e) and "message is not modified" not in str(e):
+                log_error(f"Error hiding update button: {e}")
+        
         msg = bot.send_message(chat_id, '⏳ Загрузка обновлений...')
 
         try:
@@ -469,7 +485,7 @@ def setup_handlers(bot):
         # Перезапуск бота с задержкой
         bot.edit_message_text('✅ Бот обновлён! Перезапуск через 3 секунды...', chat_id, msg.message_id)
         time.sleep(3)
-        
+
         # Запускаем новый процесс бота в фоне
         subprocess.Popen(
             ['python3', config.paths["bot_path"]],
