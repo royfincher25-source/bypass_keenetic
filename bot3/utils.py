@@ -39,40 +39,57 @@ import bot_config as config
 # =============================================================================
 
 class Cache:
-    """Простой кэш с TTL для экономии памяти"""
-    
+    """Кэш с TTL и LRU eviction для экономии памяти"""
+
     _cache = {}
     _timestamps = {}
-    
+    MAX_SIZE = 100  # Ограничение размера кэша
+
     @classmethod
     def get(cls, key, default=None):
-        """Получение из кэша"""
+        """Получение из кэша с LRU обновлением"""
         if key in cls._cache:
-            return cls._cache[key]
+            # Поднимаем элемент вверх (LRU)
+            value = cls._cache.pop(key)
+            cls._cache[key] = value
+            return value
         return default
-    
+
     @classmethod
     def set(cls, key, value, ttl=300):
-        """Установка в кэш с TTL (секунды)"""
+        """Установка в кэш с TTL и LRU eviction"""
+        # LRU eviction при превышении размера
+        if len(cls._cache) >= cls.MAX_SIZE and key not in cls._cache:
+            # Удаляем oldest entry (первый в словаре)
+            oldest_key = next(iter(cls._cache))
+            cls._cache.pop(oldest_key, None)
+            cls._timestamps.pop(oldest_key, None)
+        
         cls._cache[key] = value
         cls._timestamps[key] = time.time() + ttl
-    
+
     @classmethod
     def is_valid(cls, key):
         """Проверка валидности кэша"""
         if key not in cls._timestamps:
             return False
         return time.time() < cls._timestamps[key]
-    
+
     @classmethod
     def cleanup(cls):
-        """Очистка просроченного кэша"""
+        """Очистка просроченного кэша + LRU"""
         now = time.time()
         expired = [k for k, t in cls._timestamps.items() if now >= t]
         for key in expired:
             cls._cache.pop(key, None)
             cls._timestamps.pop(key, None)
-    
+        
+        # Дополнительно: оставляем только MAX_SIZE последних
+        while len(cls._cache) > cls.MAX_SIZE:
+            oldest_key = next(iter(cls._cache))
+            cls._cache.pop(oldest_key, None)
+            cls._timestamps.pop(oldest_key, None)
+
     @classmethod
     def clear(cls):
         """Полная очистка кэша"""
