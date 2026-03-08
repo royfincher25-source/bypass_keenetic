@@ -288,7 +288,7 @@ def setup_handlers(bot):
 
         stats['restart_count'] = config.MAX_RESTARTS
 
-        # Проверка всех сервисов
+        # Проверка всех сервисов (с уменьшенным таймаутом)
         services = [
             ('Tor', config.services["tor_restart"][0], 'tor_status'),
             ('VLESS', config.services["vless_restart"][0], 'vless_status'),
@@ -298,23 +298,24 @@ def setup_handlers(bot):
 
         for service_name, init_script, stat_key in services:
             try:
-                result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=5)
+                # Таймаут 2 секунды вместо 5 для быстродействия
+                result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
                 status = '✅' if result.returncode == 0 else '❌'
             except Exception:
                 status = '❓'
             stats[stat_key] = status
-        
+
         # Проверка VPN (через ndmc, так как нет init скрипта)
         try:
             # Проверяем наличие vpn-*.txt файлов в unblock_dir
             unblock_dir = config.paths["unblock_dir"]
             vpn_files = [f for f in os.listdir(unblock_dir) if f.startswith('vpn-') and f.endswith('.txt')]
-            
+
             if vpn_files:
-                # VPN файлы есть — проверяем статус через ndmc
+                # VPN файлы есть — проверяем статус через ndmc (таймаут 2 сек)
                 result = subprocess.run(
                     ['ndmc', '-c', 'show running | include ip-sec|vpn'],
-                    capture_output=True, text=True, timeout=5
+                    capture_output=True, text=True, timeout=2
                 )
                 if result.returncode == 0 and result.stdout.strip():
                     stats['vpn_status'] = '✅'
@@ -815,6 +816,9 @@ def setup_handlers(bot):
 
     @bot.callback_query_handler(func=lambda call: call.data == "stats_refresh")
     def handle_stats_refresh(call):
+        # Показываем уведомление об обновлении
+        bot.answer_callback_query(call.id, "⏳ Обновление статистики...", show_alert=False)
+        
         try:
             stats = get_stats()
             bot.edit_message_text(
