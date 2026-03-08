@@ -16,6 +16,8 @@ from utils import (
 )
 
 class BotState:
+    __slots__ = ['current_menu', 'selected_file']
+    
     def __init__(self):
         self.current_menu = MENU_MAIN
         self.selected_file = ""
