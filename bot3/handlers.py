@@ -222,6 +222,14 @@ def setup_handlers(bot):
             return "N/A (error)"
 
     def handle_updates(chat_id):
+        # Закрываем предыдущее окно статистики если открыто
+        if state.last_stats_message_id:
+            try:
+                bot.delete_message(chat_id, state.last_stats_message_id)
+                state.last_stats_message_id = None
+            except:
+                pass
+        
         bot_new_version = get_remote_version(config.bot_url)
         bot_version = get_local_version()
         service_update_info = f"Установленная версия: {bot_version}\nДоступная версия: {bot_new_version}"
@@ -240,7 +248,8 @@ def setup_handlers(bot):
             service_update_info += "\n⚠️ Не удалось проверить обновления"
         
         inline_keyboard = create_updates_menu(need_update)
-        bot.send_message(chat_id, service_update_info, reply_markup=inline_keyboard)
+        msg = bot.send_message(chat_id, service_update_info, reply_markup=inline_keyboard)
+        state.last_stats_message_id = msg.message_id  # Сохраняем для закрытия
 
     def get_stats(refresh_services=False):
         """
