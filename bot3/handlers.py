@@ -346,7 +346,13 @@ def setup_handlers(bot):
         except Exception:
             pass
 
-        stats['restart_count'] = config.MAX_RESTARTS
+        stats['restart_count'] = 0
+        # Читаем фактическое количество перезапусков из файла
+        try:
+            with open('/opt/etc/bot/restart_count.txt', 'r') as f:
+                stats['restart_count'] = int(f.read().strip())
+        except:
+            stats['restart_count'] = 0
 
         # Проверка сервисов только если явно запрошено (медленная операция)
         if refresh_services:

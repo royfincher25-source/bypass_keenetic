@@ -33,6 +33,14 @@ restart_count = 0
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
+# Сохранение restart_count в файл для статистики
+def save_restart_count(count):
+    try:
+        with open('/opt/etc/bot/restart_count.txt', 'w') as f:
+            f.write(str(count))
+    except:
+        pass
+
 if __name__ == "__main__":
     clean_log(config.paths["error_log"])
 
@@ -56,9 +64,11 @@ if __name__ == "__main__":
         except (telebot.apihelper.ApiException, requests.exceptions.RequestException) as err:
             log_error(f"Ошибка соединения или Telegram API: {str(err)}")
             restart_count += 1
+            save_restart_count(restart_count)
             time.sleep(config.RESTART_DELAY)
         except Exception as err:
             log_error(f"Неизвестная ошибка: {str(err)}")
             restart_count += 1
+            save_restart_count(restart_count)
             time.sleep(config.RESTART_DELAY)
     log_error("Бот остановлен после достижения максимального количества попыток перезапуска")
