@@ -276,6 +276,7 @@ def setup_handlers(bot):
             'bot_ram_mb': 0,
             'system_ram_total_mb': 0,
             'system_ram_free_mb': 0,
+            'cpu_usage_percent': 0,
             'bot_uptime': 'N/A',
             'restart_count': 0,
             # Используем кэш статусов
@@ -307,6 +308,35 @@ def setup_handlers(bot):
                     break
         except Exception:
             pass
+
+        # Проверка загрузки CPU (через /proc/stat)
+        try:
+            # Первое чтение
+            with open('/proc/stat', 'r') as f:
+                line = f.readline()
+                if line.startswith('cpu '):
+                    values = list(map(int, line.split()[1:]))
+                    idle1 = values[3] if len(values) > 3 else 0
+                    total1 = sum(values)
+            
+            import time
+            time.sleep(0.5)  # Ждём 0.5 сек для замера
+            
+            # Второе чтение
+            with open('/proc/stat', 'r') as f:
+                line = f.readline()
+                if line.startswith('cpu '):
+                    values = list(map(int, line.split()[1:]))
+                    idle2 = values[3] if len(values) > 3 else 0
+                    total2 = sum(values)
+            
+            # Расчёт загрузки CPU
+            idle_delta = idle2 - idle1
+            total_delta = total2 - total1
+            if total_delta > 0:
+                stats['cpu_usage_percent'] = round((1 - idle_delta / total_delta) * 100)
+        except Exception:
+            stats['cpu_usage_percent'] = 0
 
         try:
             uptime_seconds = float(subprocess.check_output(['cat', '/proc/uptime'], text=True).split()[0])
@@ -372,6 +402,7 @@ def setup_handlers(bot):
             f"━━━━━━━━━━━━━━━━\n"
             f"🧠 RAM бота: {stats['bot_ram_mb']:.1f} MB\n"
             f"💻 Система: {stats['system_ram_free_mb']:.0f}/{stats['system_ram_total_mb']:.0f} MB свободно\n"
+            f"💾 CPU: {stats['cpu_usage_percent']}%\n"
             f"⏱️ Uptime: {stats['bot_uptime']}\n"
             f"🔄 Перезапусков: {stats['restart_count']}"
         )
