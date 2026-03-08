@@ -184,18 +184,22 @@ def setup_handlers(bot):
 
     def handle_updates(chat_id):
         bot_new_version = get_remote_version(config.bot_url)
-        bot_version = get_local_version()        
-        service_update_info = f"Установленная версия: {bot_version}\nДоступная на git версия: {bot_new_version}"
-        need_update = True  # Всегда показывать кнопку обновления
+        bot_version = get_local_version()
+        service_update_info = f"Установленная версия: {bot_version}\nДоступная версия: {bot_new_version}"
+        
+        # Всегда показываем кнопку обновления
+        need_update = True
+        
         if bot_version != "N/A" and bot_new_version != "N/A":
             try:
                 if tuple(map(int, bot_version.split("."))) >= tuple(map(int, bot_new_version.split("."))):
-                    need_update = False  # Скрыть если версия актуальна
                     service_update_info += "\n✅ У вас последняя версия!"
+                    # Но всё равно показываем кнопку для принудительного обновления
             except ValueError:
-                service_update_info += "\nОшибка: версии имеют неверный формат"
+                service_update_info += "\n⚠️ Версии имеют неверный формат"
         else:
-            service_update_info += "\nНе удалось проверить обновления"
+            service_update_info += "\n⚠️ Не удалось проверить обновления"
+        
         inline_keyboard = create_updates_menu(need_update)
         bot.send_message(chat_id, service_update_info, reply_markup=inline_keyboard)
 
