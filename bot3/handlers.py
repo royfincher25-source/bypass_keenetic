@@ -15,16 +15,17 @@ from utils import (
     shadowsocks_config, tor_config, get_available_drives, create_backup_with_params, log_error
 )
 
-class BotState:
-    __slots__ = ['current_menu', 'selected_file']
+class HandlerState:
+    """Оптимизированное состояние обработчиков с __slots__ для экономии памяти"""
+    __slots__ = ['current_menu', 'selected_file', 'backup_state']
     
     def __init__(self):
         self.current_menu = get_menu_main()
         self.selected_file = ""
+        self.backup_state = BackupState()
 
 def setup_handlers(bot):
-    state = BotState()
-    backup_state = BackupState()
+    state = HandlerState()
 
     def set_menu_and_reply(chat_id, new_menu, text=None, markup=None):
         state.current_menu = new_menu
@@ -149,7 +150,7 @@ def setup_handlers(bot):
         subprocess.Popen(config.services['service_script'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
 
     def handle_backup(chat_id):
-        inline_keyboard = create_backup_menu(backup_state)
+        inline_keyboard = create_backup_menu(state.backup_state)
         bot.send_message(chat_id, "Выберите файлы для бэкапа:", reply_markup=inline_keyboard)
 
     def handle_install_remove(chat_id):
@@ -363,20 +364,20 @@ def setup_handlers(bot):
         state.current_menu = get_menu_service()
         bot.delete_message(call.message.chat.id, call.message.message_id)
         bot.send_message(call.message.chat.id, state.current_menu.name, reply_markup=state.current_menu.markup)
-        backup_state.__init__()
+        state.backup_state.__init__()
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith("backup_toggle_"))
     def handle_backup_toggle(call):
         backup_type = call.data.replace("backup_toggle_", "")
         if backup_type == "startup":
-            backup_state.startup_config = not backup_state.startup_config
+            state.backup_state.startup_config = not state.backup_state.startup_config
         elif backup_type == "firmware":
-            backup_state.firmware = not backup_state.firmware
+            state.backup_state.firmware = not state.backup_state.firmware
         elif backup_type == "entware":
-            backup_state.entware = not backup_state.entware
+            state.backup_state.entware = not state.backup_state.entware
         elif backup_type == "custom":
-            backup_state.custom_files = not backup_state.custom_files
-        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=create_backup_menu(backup_state))
+            state.backup_state.custom_files = not state.backup_state.custom_files
+        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=create_backup_menu(state.backup_state))
             
     @bot.callback_query_handler(func=lambda call: call.data == "backup_create")
     def handle_backup_create(call):
@@ -385,8 +386,8 @@ def setup_handlers(bot):
             bot.answer_callback_query(call.id, "❌ Нет доступных дисков для бэкапа", show_alert=True)
             return
         msg = bot.edit_message_text("Выберите диск для сохранения бэкапа:", call.message.chat.id, call.message.message_id, reply_markup=create_drive_selection_menu(drives))
-        backup_state.selection_msg_id = msg.message_id
-                    
+        state.backup_state.selection_msg_id = msg.message_id
+
     @bot.callback_query_handler(func=lambda call: call.data.startswith("backup_drive_"))
     def handle_backup_drive_select(call):
         drive_uuid = call.data.replace("backup_drive_", "")
@@ -395,26 +396,26 @@ def setup_handlers(bot):
         if not selected_drive:
             bot.answer_callback_query(call.id, "❌ Выбранный диск недоступен", show_alert=True)
             return
-        backup_state.selected_drive = selected_drive
-        bot.edit_message_text(f"☑️ Выбран диск: {selected_drive['label']}\nУдалить архив с диска после создания бэкапа?", call.message.chat.id, backup_state.selection_msg_id, reply_markup=create_delete_archive_menu())
+        state.backup_state.selected_drive = selected_drive
+        bot.edit_message_text(f"☑️ Выбран диск: {selected_drive['label']}\nУдалить архив с диска после создания бэкапа?", call.message.chat.id, state.backup_state.selection_msg_id, reply_markup=create_delete_archive_menu())
 
     @bot.callback_query_handler(func=lambda call: call.data in ["backup_delete_yes", "backup_delete_no"])
     def handle_delete_archive_choice(call):
         if call.data == "backup_delete_yes":
-            backup_state.delete_archive = True
+            state.backup_state.delete_archive = True
             choice_text = "Да"
         elif call.data == "backup_delete_no":
-            backup_state.delete_archive = False
+            state.backup_state.delete_archive = False
             choice_text = "Нет"
         bot.edit_message_text(
-            f"☑️ Выбран диск: {backup_state.selected_drive['label']}\n☑️ Удалить архив: {choice_text}", call.message.chat.id, backup_state.selection_msg_id)
+            f"☑️ Выбран диск: {state.backup_state.selected_drive['label']}\n☑️ Удалить архив: {choice_text}", call.message.chat.id, state.backup_state.selection_msg_id)
         progress_msg = bot.send_message(call.message.chat.id, "⏳ Начинаем создание бэкапа, подождите!")
-        create_backup_with_params(bot, call.message.chat.id, backup_state, backup_state.selected_drive, progress_msg.message_id)
-        backup_state.__init__()
+        create_backup_with_params(bot, call.message.chat.id, state.backup_state, state.backup_state.selected_drive, progress_msg.message_id)
+        state.backup_state.__init__()
 
     @bot.callback_query_handler(func=lambda call: call.data == "backup_menu")
     def handle_backup_menu_return(call):
-        bot.edit_message_text("Выберите файлы для бэкапа:", call.message.chat.id, call.message.message_id, reply_markup=create_backup_menu(backup_state))
+        bot.edit_message_text("Выберите файлы для бэкапа:", call.message.chat.id, call.message.message_id, reply_markup=create_backup_menu(state.backup_state))
     
     @bot.callback_query_handler(func=lambda call: call.data == "dns_override_on")
     def handle_dns_override_on(call):
