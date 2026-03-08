@@ -242,7 +242,14 @@ def setup_handlers(bot):
         inline_keyboard = create_updates_menu(need_update)
         bot.send_message(chat_id, service_update_info, reply_markup=inline_keyboard)
 
-    def get_stats():
+    def get_stats(refresh_services=False):
+        """
+        Получение статистики.
+        
+        Args:
+            refresh_services: Если True — проверять статусы сервисов (медленно)
+                             Если False — пропустить проверку (быстро)
+        """
         stats = {
             'bot_ram_mb': 0,
             'system_ram_total_mb': 0,
@@ -288,45 +295,47 @@ def setup_handlers(bot):
 
         stats['restart_count'] = config.MAX_RESTARTS
 
-        # Проверка всех сервисов (с уменьшенным таймаутом)
-        services = [
-            ('Tor', config.services["tor_restart"][0], 'tor_status'),
-            ('VLESS', config.services["vless_restart"][0], 'vless_status'),
-            ('Trojan', config.services["trojan_restart"][0], 'trojan_status'),
-            ('Shadowsocks', config.services["shadowsocks_restart"][0], 'shadowsocks_status')
-        ]
+        # Проверка сервисов только если явно запрошено (медленная операция)
+        if refresh_services:
+            # Проверка всех сервисов (с уменьшенным таймаутом)
+            services = [
+                ('Tor', config.services["tor_restart"][0], 'tor_status'),
+                ('VLESS', config.services["vless_restart"][0], 'vless_status'),
+                ('Trojan', config.services["trojan_restart"][0], 'trojan_status'),
+                ('Shadowsocks', config.services["shadowsocks_restart"][0], 'shadowsocks_status')
+            ]
 
-        for service_name, init_script, stat_key in services:
+            for service_name, init_script, stat_key in services:
+                try:
+                    # Таймаут 2 секунды вместо 5 для быстродействия
+                    result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
+                    status = '✅' if result.returncode == 0 else '❌'
+                except Exception:
+                    status = '❓'
+                stats[stat_key] = status
+
+            # Проверка VPN (через ndmc, так как нет init скрипта)
             try:
-                # Таймаут 2 секунды вместо 5 для быстродействия
-                result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
-                status = '✅' if result.returncode == 0 else '❌'
-            except Exception:
-                status = '❓'
-            stats[stat_key] = status
+                # Проверяем наличие vpn-*.txt файлов в unblock_dir
+                unblock_dir = config.paths["unblock_dir"]
+                vpn_files = [f for f in os.listdir(unblock_dir) if f.startswith('vpn-') and f.endswith('.txt')]
 
-        # Проверка VPN (через ndmc, так как нет init скрипта)
-        try:
-            # Проверяем наличие vpn-*.txt файлов в unblock_dir
-            unblock_dir = config.paths["unblock_dir"]
-            vpn_files = [f for f in os.listdir(unblock_dir) if f.startswith('vpn-') and f.endswith('.txt')]
-
-            if vpn_files:
-                # VPN файлы есть — проверяем статус через ndmc (таймаут 2 сек)
-                result = subprocess.run(
-                    ['ndmc', '-c', 'show running | include ip-sec|vpn'],
-                    capture_output=True, text=True, timeout=2
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    stats['vpn_status'] = '✅'
+                if vpn_files:
+                    # VPN файлы есть — проверяем статус через ndmc (таймаут 2 сек)
+                    result = subprocess.run(
+                        ['ndmc', '-c', 'show running | include ip-sec|vpn'],
+                        capture_output=True, text=True, timeout=2
+                    )
+                    if result.returncode == 0 and result.stdout.strip():
+                        stats['vpn_status'] = '✅'
+                    else:
+                        # Файлы есть, но VPN не активен
+                        stats['vpn_status'] = '⚠️'  # Предупреждение
                 else:
-                    # Файлы есть, но VPN не активен
-                    stats['vpn_status'] = '⚠️'  # Предупреждение
-            else:
-                # VPN файлов нет — показываем статус "не настроен"
-                stats['vpn_status'] = '➖'
-        except Exception:
-            stats['vpn_status'] = '❓'
+                    # VPN файлов нет — показываем статус "не настроен"
+                    stats['vpn_status'] = '➖'
+            except Exception:
+                stats['vpn_status'] = '❓'
 
         return stats
 
@@ -387,7 +396,8 @@ def setup_handlers(bot):
         return markup
 
     def handle_stats(chat_id):
-        stats = get_stats()
+        # При открытии статистики проверяем статусы сервисов
+        stats = get_stats(refresh_services=True)
         msg = bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
         state.last_stats_message_id = msg.message_id  # Сохраняем ID сообщения
 
@@ -584,8 +594,8 @@ def setup_handlers(bot):
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
             if result.returncode == 0:
-                # Получаем новую статистику и обновляем сообщение
-                stats = get_stats()
+                # Получаем новую статистику (сервисы уже обновлены, проверяем только RAM/uptime)
+                stats = get_stats(refresh_services=False)
                 bot.edit_message_text(
                     format_stats_message(stats),
                     call.message.chat.id,
@@ -816,11 +826,12 @@ def setup_handlers(bot):
 
     @bot.callback_query_handler(func=lambda call: call.data == "stats_refresh")
     def handle_stats_refresh(call):
-        # Показываем уведомление об обновлении
-        bot.answer_callback_query(call.id, "⏳ Обновление статистики...", show_alert=False)
+        # Быстрое обновление (только RAM и uptime, без проверки сервисов)
+        bot.answer_callback_query(call.id, "⏳ Обновление...", show_alert=False)
         
         try:
-            stats = get_stats()
+            # Не проверяем сервисы повторно - они уже актуальны
+            stats = get_stats(refresh_services=False)
             bot.edit_message_text(
                 format_stats_message(stats),
                 call.message.chat.id,
@@ -831,4 +842,4 @@ def setup_handlers(bot):
             # Игнорируем ошибку "message is not modified" (Telegram API error 400)
             if "message is not modified" not in str(e):
                 log_error(f"Error refreshing stats: {e}")
-                bot.answer_callback_query(call.id, "❌ Ошибка обновления статистики", show_alert=True)
+                bot.answer_callback_query(call.id, "❌ Ошибка обновления", show_alert=True)
