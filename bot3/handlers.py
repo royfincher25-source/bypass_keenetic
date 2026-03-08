@@ -281,10 +281,10 @@ def setup_handlers(bot):
             f"⏱️ Uptime: {stats['bot_uptime']}\n"
             f"🔄 Перезапусков: {stats['restart_count']}\n\n"
             f"🔵 Сервисы:\n"
-            f"  Tor: {stats['tor_status']}\n"
-            f"  VLESS: {stats['vless_status']}\n"
-            f"  Trojan: {stats['trojan_status']}\n"
-            f"  Shadowsocks: {stats['shadowsocks_status']}"
+            f"  🔵 Tor: {stats['tor_status']}\n"
+            f"  🔷 VLESS: {stats['vless_status']}\n"
+            f"  🟡 Trojan: {stats['trojan_status']}\n"
+            f"  🟢 Shadowsocks: {stats['shadowsocks_status']}"
         )
 
     def handle_stats(chat_id):
