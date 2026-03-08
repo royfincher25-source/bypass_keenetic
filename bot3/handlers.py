@@ -818,9 +818,9 @@ def setup_handlers(bot):
             close_fds=True,
             start_new_session=True
         )
-        # Завершаем текущий процесс
-        import os
-        os._exit(0)
+        # Завершаем текущий процесс (корректное завершение с cleanup)
+        import sys
+        sys.exit(0)
 
     @bot.callback_query_handler(func=lambda call: call.data == "install")
     def handle_install_callback(call):
