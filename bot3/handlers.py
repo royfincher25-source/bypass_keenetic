@@ -290,12 +290,7 @@ def setup_handlers(bot):
             f"🧠 RAM бота: {stats['bot_ram_mb']:.1f} MB\n"
             f"💻 Система: {stats['system_ram_free_mb']:.0f}/{stats['system_ram_total_mb']:.0f} MB свободно\n"
             f"⏱️ Uptime: {stats['bot_uptime']}\n"
-            f"🔄 Перезапусков: {stats['restart_count']}\n\n"
-            f"🔵 Сервисы:\n"
-            f"  🔵 Tor: {stats['tor_status']}\n"
-            f"  🔷 VLESS: {stats['vless_status']}\n"
-            f"  🟡 Trojan: {stats['trojan_status']}\n"
-            f"  🟢 Shadowsocks: {stats['shadowsocks_status']}"
+            f"🔄 Перезапусков: {stats['restart_count']}"
         )
 
     def create_stats_keyboard(stats):
