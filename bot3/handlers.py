@@ -405,6 +405,13 @@ def setup_handlers(bot):
         return markup
 
     def handle_stats(chat_id):
+        # Закрываем предыдущее окно статистики если открыто
+        if state.last_stats_message_id:
+            try:
+                bot.delete_message(chat_id, state.last_stats_message_id)
+            except:
+                pass
+        
         # При открытии статистики проверяем статусы сервисов
         stats = get_stats(refresh_services=True)
         msg = bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
