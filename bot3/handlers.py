@@ -594,8 +594,8 @@ def setup_handlers(bot):
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
             if result.returncode == 0:
-                # Получаем новую статистику (сервисы уже обновлены, проверяем только RAM/uptime)
-                stats = get_stats(refresh_services=False)
+                # Получаем новую статистику с проверкой сервисов (после изменения статуса)
+                stats = get_stats(refresh_services=True)
                 bot.edit_message_text(
                     format_stats_message(stats),
                     call.message.chat.id,
