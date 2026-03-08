@@ -265,6 +265,43 @@ def download_bot_files():
 
 
 # =============================================================================
+# ВАЛИДАЦИЯ ДАННЫХ
+# =============================================================================
+
+# Паттерны для валидации доменов и IP
+DOMAIN_PATTERN = re.compile(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$')
+IP_PATTERN = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')
+IPV6_PATTERN = re.compile(r'^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$')
+COMMENT_PATTERN = re.compile(r'^#')
+
+
+def validate_bypass_entry(entry):
+    """
+    Проверка записи списка обхода.
+    Возвращает True если запись валидна (домен, IP, IPv6 или комментарий)
+    """
+    entry = entry.strip()
+    if not entry:
+        return False
+    # Комментарии разрешены
+    if COMMENT_PATTERN.match(entry):
+        return True
+    # Проверка домена
+    if DOMAIN_PATTERN.match(entry):
+        return True
+    # Проверка IPv4
+    if IP_PATTERN.match(entry):
+        # Дополнительная проверка диапазонов октетов
+        octets = entry.split('.')
+        if all(0 <= int(octet) <= 255 for octet in octets):
+            return True
+    # Проверка IPv6
+    if IPV6_PATTERN.match(entry):
+        return True
+    return False
+
+
+# =============================================================================
 # РАБОТА СО СПИСКАМИ ОБХОДА (ОПТИМИЗИРОВАНО)
 # =============================================================================
 
@@ -316,12 +353,18 @@ def save_bypass_list(filepath, sites):
     Сохранение списка обхода.
     - Сохранение в исходном порядке (без сортировки)
     - Поддержка комментариев (#)
+    - Атомарная запись (через .tmp файл)
     - Очистка кэша после сохранения
     """
     try:
-        with open(filepath, 'w', encoding='utf-8') as f:
+        # Атомарная запись через временный файл
+        temp_path = filepath + '.tmp'
+        with open(temp_path, 'w', encoding='utf-8') as f:
             # Сохраняем в исходном порядке
             f.write('\n'.join(sites))
+        
+        # Атомарная замена файла
+        os.replace(temp_path, filepath)
 
         # Очистка кэша для этого файла
         cache_key = f'bypass:{filepath}'
@@ -330,6 +373,12 @@ def save_bypass_list(filepath, sites):
 
     except Exception as e:
         log_error(f"Ошибка при сохранении списка обхода: {str(e)}")
+        # Очистка временного файла при ошибке
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except:
+            pass
         raise
 
 

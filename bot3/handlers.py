@@ -68,16 +68,29 @@ def setup_handlers(bot):
         filepath = f"{config.paths['unblock_dir']}{state.selected_file}.txt"
         mylist = load_bypass_list(filepath)
         k = len(mylist)
+        added_count = 0
+        invalid_items = []
+        
         if len(message.text) > 1:
-            # Добавляем новые элементы, сохраняя порядок
+            # Добавляем новые элементы с валидацией
             for item in message.text.split('\n'):
                 item = item.strip()
                 if item and item not in mylist:
-                    mylist.append(item)
+                    # Проверяем валидность записи
+                    from utils import validate_bypass_entry
+                    if validate_bypass_entry(item):
+                        mylist.append(item)
+                        added_count += 1
+                    else:
+                        invalid_items.append(item)
+        
         save_bypass_list(filepath, mylist)
-        if k != len(mylist):
-            bot.send_message(message.chat.id, "✅ Успешно добавлено, применяю изменения...")
+        
+        if added_count > 0:
+            bot.send_message(message.chat.id, f"✅ Успешно добавлено: {added_count} шт.\nПрименяю изменения...")
             subprocess.run(config.services["unblock_update"])
+        elif invalid_items:
+            bot.send_message(message.chat.id, f"❕Все записи уже в списке или невалидны.\n\nНераспознанные записи:\n" + "\n".join(invalid_items[:5]))
         else:
             bot.send_message(message.chat.id, "❕Было добавлено ранее")
         set_menu_and_reply(message.chat.id, get_menu_bypass_list(), "Меню " + state.selected_file)
