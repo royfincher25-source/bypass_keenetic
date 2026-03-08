@@ -1,7 +1,7 @@
 from telebot import types
 import bot_config as config
 import os
-import subprocess
+from utils import log_error
 
 class Menu:
     __slots__ = ['name', 'markup', 'level', 'back_level']
@@ -47,15 +47,20 @@ def create_button(text, callback_data):
 
 def create_bypass_files_menu():
     """Создание меню выбора файлов обхода"""
-    dirname = config.paths["unblock_dir"]
-    buttons = []
-    if os.path.exists(dirname) and os.listdir(dirname):
-        file_buttons = [fln.replace(".txt", "") for fln in os.listdir(dirname)]
-        buttons.append(file_buttons)
-    else:
-        buttons.append(["Нет доступных файлов"])
-    buttons.append(["🔙 Назад"])
-    return create_menu(buttons)
+    try:
+        dirname = config.paths["unblock_dir"]
+        buttons = []
+        if os.path.exists(dirname) and os.listdir(dirname):
+            file_buttons = [fln.replace(".txt", "") for fln in os.listdir(dirname)]
+            buttons.append(file_buttons)
+        else:
+            buttons.append(["Нет доступных файлов"])
+        buttons.append(["🔙 Назад"])
+        return create_menu(buttons)
+    except Exception as e:
+        log_error(f"Error creating bypass menu: {e}")
+        buttons = [["Ошибка меню"], ["🔙 Назад"]]
+        return create_menu(buttons)
 
 def create_backup_menu(backup_state):
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -139,33 +144,31 @@ def get_menu_remove_bypass():
     return Menu("➖ Удалить из списка", create_menu([["🔙 Назад"]]), 4, 2)
 
 def get_menu_keys_bridges():
-    """Меню ключей и мостов — показывает только активные сервисы"""
+    """Меню ключей и мостов — показывает только сервисы с конфигами"""
     buttons = []
 
-    # Проверяем статус сервисов через init скрипты
-    def is_service_active(init_script):
-        try:
-            result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
-            return result.returncode == 0
-        except:
-            return False
+    # Проверяем наличие конфигов, а не статус сервисов (быстро и надёжно)
+    has_tor = os.path.exists(config.paths["tor_config"])
+    has_vless = os.path.exists(config.paths["vless_config"])
+    has_trojan = os.path.exists(config.paths["trojan_config"])
+    has_shadowsocks = os.path.exists(config.paths["shadowsocks_config"])
 
-    # Проверяем активные сервисы
+    # Формируем кнопки только для сервисов с конфигами
     active_services = []
-    if is_service_active(config.services["tor_restart"][0]):
+    if has_tor:
         active_services.append("Tor")
-    if is_service_active(config.services["vless_restart"][0]):
+    if has_vless:
         active_services.append("Vless")
-    if is_service_active(config.services["trojan_restart"][0]):
+    if has_trojan:
         active_services.append("Trojan")
-    if is_service_active(config.services["shadowsocks_restart"][0]):
+    if has_shadowsocks:
         active_services.append("Shadowsocks")
 
-    # Формируем кнопки только для активных сервисов
+    # Формируем кнопки только для сервисов с конфигами
     if active_services:
         buttons.append(active_services)
     else:
-        buttons.append(["Нет активных сервисов"])
+        buttons.append(["Нет настроенных сервисов"])
 
     buttons.append(["🔙 Назад"])
     return Menu("🔑 Ключи и мосты", create_menu(buttons), 5, 0)
