@@ -284,12 +284,49 @@ def setup_handlers(bot):
             f"  🔵 Tor: {stats['tor_status']}\n"
             f"  🔷 VLESS: {stats['vless_status']}\n"
             f"  🟡 Trojan: {stats['trojan_status']}\n"
-            f"  🟢 Shadowsocks: {stats['shadowsocks_status']}"
+            f"  🟢 Shadowsocks: {stats['shadowsocks_status']}\n\n"
+            f"ℹ️ Управление: /tor_on, /tor_off, /vless_on, /vless_off,\n"
+            f"   /trojan_on, /trojan_off, /ss_on, /ss_off"
         )
+
+    def create_stats_keyboard(stats):
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        
+        # Кнопки управления сервисами
+        service_buttons = []
+        
+        # Tor кнопки
+        if stats['tor_status'] == '✅':
+            service_buttons.append(types.InlineKeyboardButton("🔵 Tor: ВКЛ ✅", callback_data="service_tor_off"))
+        else:
+            service_buttons.append(types.InlineKeyboardButton("🔵 Tor: ВЫКЛ ❌", callback_data="service_tor_on"))
+        
+        # VLESS кнопки
+        if stats['vless_status'] == '✅':
+            service_buttons.append(types.InlineKeyboardButton("🔷 VLESS: ВКЛ ✅", callback_data="service_vless_off"))
+        else:
+            service_buttons.append(types.InlineKeyboardButton("🔷 VLESS: ВЫКЛ ❌", callback_data="service_vless_on"))
+        
+        # Trojan кнопки
+        if stats['trojan_status'] == '✅':
+            service_buttons.append(types.InlineKeyboardButton("🟡 Trojan: ВКЛ ✅", callback_data="service_trojan_off"))
+        else:
+            service_buttons.append(types.InlineKeyboardButton("🟡 Trojan: ВЫКЛ ❌", callback_data="service_trojan_on"))
+        
+        # Shadowsocks кнопки
+        if stats['shadowsocks_status'] == '✅':
+            service_buttons.append(types.InlineKeyboardButton("🟢 SS: ВКЛ ✅", callback_data="service_ss_off"))
+        else:
+            service_buttons.append(types.InlineKeyboardButton("🟢 SS: ВЫКЛ ❌", callback_data="service_ss_on"))
+        
+        markup.add(*service_buttons)
+        markup.add(types.InlineKeyboardButton("🔄 Обновить", callback_data="stats_refresh"))
+        markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="menu_main"))
+        return markup
 
     def handle_stats(chat_id):
         stats = get_stats()
-        bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard())
+        bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
 
     def toggle_dns_override(chat_id, enable: bool):
         command = ["ndmc", "-c", "opkg dns-override"] if enable else ["ndmc", "-c", "no opkg dns-override"]
@@ -359,7 +396,81 @@ def setup_handlers(bot):
             bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
             return
         stats = get_stats()
-        bot.send_message(message.chat.id, format_stats_message(stats), reply_markup=create_stats_keyboard())
+        bot.send_message(message.chat.id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
+
+    # Обработчики команд управления сервисами
+    @bot.message_handler(commands=['tor_on', 'tor_off', 'vless_on', 'vless_off', 'trojan_on', 'trojan_off', 'ss_on', 'ss_off'])
+    def service_command(message):
+        if message.from_user.username not in config.usernames:
+            bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
+            return
+        command = message.text.split()[0]
+        parts = command[1:].rsplit('_', 1)
+        if len(parts) != 2:
+            bot.send_message(message.chat.id, '❌ Неверная команда')
+            return
+        service_name, action_type = parts
+        enable = (action_type == 'on')
+        services_map = {
+            'tor': ('🔵 Tor', config.services["tor_restart"][0]),
+            'vless': ('🔷 VLESS', config.services["vless_restart"][0]),
+            'trojan': ('🟡 Trojan', config.services["trojan_restart"][0]),
+            'ss': ('🟢 Shadowsocks', config.services["shadowsocks_restart"][0])
+        }
+        if service_name not in services_map:
+            bot.send_message(message.chat.id, '❌ Неизвестный сервис')
+            return
+        name, init_script = services_map[service_name]
+        status = "включение" if enable else "выключение"
+        msg = bot.send_message(message.chat.id, f'⏳ {name} {status}...')
+        try:
+            cmd = [init_script, 'start' if enable else 'stop']
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                bot.edit_message_text(f'✅ {name} {"включён" if enable else "выключен"}', msg.chat.id, msg.message_id)
+            else:
+                error = result.stderr.strip() or result.stdout.strip() or "Неизвестная ошибка"
+                bot.edit_message_text(f'❌ Ошибка: {error}', msg.chat.id, msg.message_id)
+        except subprocess.TimeoutExpired:
+            bot.edit_message_text(f'❌ Таймаут операции ({name})', msg.chat.id, msg.message_id)
+        except Exception as e:
+            bot.edit_message_text(f'❌ Ошибка: {str(e)}', msg.chat.id, msg.message_id)
+
+    @bot.callback_query_handler(func=lambda call: call.data.startswith("service_"))
+    def handle_service_control(call):
+        action = call.data.replace("service_", "")
+        parts = action.rsplit('_', 1)
+        if len(parts) != 2:
+            bot.answer_callback_query(call.id, "❌ Неверная команда", show_alert=True)
+            return
+        service_name, action_type = parts
+        enable = (action_type == "on")
+        services_map = {
+            'tor': ("🔵 Tor", config.services["tor_restart"][0]),
+            'vless': ("🔷 VLESS", config.services["vless_restart"][0]),
+            'trojan': ("🟡 Trojan", config.services["trojan_restart"][0]),
+            'ss': ("🟢 Shadowsocks", config.services["shadowsocks_restart"][0])
+        }
+        if service_name not in services_map:
+            bot.answer_callback_query(call.id, "❌ Неизвестный сервис", show_alert=True)
+            return
+        name, init_script = services_map[service_name]
+        status = "включение" if enable else "выключение"
+        bot.answer_callback_query(call.id, f"⏳ {name} {status}...")
+        try:
+            cmd = [init_script, 'start' if enable else 'stop']
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                bot.answer_callback_query(call.id, f"✅ {name} {'включён' if enable else 'выключен'}", show_alert=False)
+                stats = get_stats()
+                bot.edit_message_text(format_stats_message(stats), call.message.chat.id, call.message.message_id, reply_markup=create_stats_keyboard(stats))
+            else:
+                error = result.stderr.strip() or result.stdout.strip() or "Неизвестная ошибка"
+                bot.answer_callback_query(call.id, f"❌ Ошибка: {error}", show_alert=True)
+        except subprocess.TimeoutExpired:
+            bot.answer_callback_query(call.id, f"❌ Таймаут операции ({name})", show_alert=True)
+        except Exception as e:
+            bot.answer_callback_query(call.id, f"❌ Ошибка: {str(e)}", show_alert=True)
 
     @bot.message_handler(commands=['update'])
     def update_command(message):
