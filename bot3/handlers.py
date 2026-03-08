@@ -608,16 +608,17 @@ def setup_handlers(bot):
             if result.returncode == 0:
                 # Получаем статистику без проверки сервисов (быстро)
                 stats = get_stats(refresh_services=False)
-                
+
                 # Проверяем статус только что изменённого сервиса
                 try:
                     status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
                     new_status = '✅' if status_result.returncode == 0 else '❌'
-                    # Обновляем статус только этого сервиса
+                    # Обновляем статус только этого сервиса в кэше и статистике
+                    _service_status_cache[stat_key] = new_status
                     stats[stat_key] = new_status
                 except:
                     pass  # Оставляем как есть
-                
+
                 bot.edit_message_text(
                     format_stats_message(stats),
                     call.message.chat.id,
@@ -848,12 +849,12 @@ def setup_handlers(bot):
 
     @bot.callback_query_handler(func=lambda call: call.data == "stats_refresh")
     def handle_stats_refresh(call):
-        # Полное обновление (RAM, uptime + статусы сервисов)
+        # Быстрое обновление (RAM и uptime из кэша)
         bot.answer_callback_query(call.id, "⏳ Обновление...", show_alert=False)
 
         try:
-            # Проверяем сервисы для актуальных статусов
-            stats = get_stats(refresh_services=True)
+            # Используем кэш статусов (быстро)
+            stats = get_stats(refresh_services=False)
             bot.edit_message_text(
                 format_stats_message(stats),
                 call.message.chat.id,
