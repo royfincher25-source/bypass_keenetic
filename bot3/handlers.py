@@ -243,7 +243,8 @@ def setup_handlers(bot):
             'tor_status': 'N/A',
             'vless_status': 'N/A',
             'trojan_status': 'N/A',
-            'shadowsocks_status': 'N/A'
+            'shadowsocks_status': 'N/A',
+            'vpn_status': 'N/A'
         }
 
         bot_pid = os.getpid()
@@ -285,7 +286,7 @@ def setup_handlers(bot):
             ('Trojan', config.services["trojan_restart"][0], 'trojan_status'),
             ('Shadowsocks', config.services["shadowsocks_restart"][0], 'shadowsocks_status')
         ]
-        
+
         for service_name, init_script, stat_key in services:
             try:
                 result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=5)
@@ -293,6 +294,29 @@ def setup_handlers(bot):
             except Exception:
                 status = '❓'
             stats[stat_key] = status
+        
+        # Проверка VPN (через ndmc, так как нет init скрипта)
+        try:
+            # Проверяем наличие vpn-*.txt файлов в unblock_dir
+            unblock_dir = config.paths["unblock_dir"]
+            vpn_files = [f for f in os.listdir(unblock_dir) if f.startswith('vpn-') and f.endswith('.txt')]
+            
+            if vpn_files:
+                # VPN файлы есть — проверяем статус через ndmc
+                result = subprocess.run(
+                    ['ndmc', '-c', 'show running | include ip-sec|vpn'],
+                    capture_output=True, text=True, timeout=5
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    stats['vpn_status'] = '✅'
+                else:
+                    # Файлы есть, но VPN не активен
+                    stats['vpn_status'] = '⚠️'  # Предупреждение
+            else:
+                # VPN файлов нет — показываем статус "не настроен"
+                stats['vpn_status'] = '➖'
+        except Exception:
+            stats['vpn_status'] = '❓'
 
         return stats
 
@@ -308,34 +332,45 @@ def setup_handlers(bot):
 
     def create_stats_keyboard(stats):
         markup = types.InlineKeyboardMarkup(row_width=2)
-        
+
         # Кнопки управления сервисами
         service_buttons = []
-        
+
         # Tor кнопки
         if stats['tor_status'] == '✅':
             service_buttons.append(types.InlineKeyboardButton("🔵 Tor: ВКЛ ✅", callback_data="service_tor_off"))
         else:
             service_buttons.append(types.InlineKeyboardButton("🔵 Tor: ВЫКЛ ❌", callback_data="service_tor_on"))
-        
+
         # VLESS кнопки
         if stats['vless_status'] == '✅':
             service_buttons.append(types.InlineKeyboardButton("🔷 VLESS: ВКЛ ✅", callback_data="service_vless_off"))
         else:
             service_buttons.append(types.InlineKeyboardButton("🔷 VLESS: ВЫКЛ ❌", callback_data="service_vless_on"))
-        
+
         # Trojan кнопки
         if stats['trojan_status'] == '✅':
             service_buttons.append(types.InlineKeyboardButton("🟡 Trojan: ВКЛ ✅", callback_data="service_trojan_off"))
         else:
             service_buttons.append(types.InlineKeyboardButton("🟡 Trojan: ВЫКЛ ❌", callback_data="service_trojan_on"))
-        
+
         # Shadowsocks кнопки
         if stats['shadowsocks_status'] == '✅':
             service_buttons.append(types.InlineKeyboardButton("🟢 SS: ВКЛ ✅", callback_data="service_ss_off"))
         else:
             service_buttons.append(types.InlineKeyboardButton("🟢 SS: ВЫКЛ ❌", callback_data="service_ss_on"))
-        
+
+        # VPN кнопка (только статус, без управления)
+        vpn_status_emoji = stats['vpn_status']
+        if vpn_status_emoji == '✅':
+            service_buttons.append(types.InlineKeyboardButton("🔷 VPN: ВКЛ ✅", callback_data="service_vpn_info"))
+        elif vpn_status_emoji == '⚠️':
+            service_buttons.append(types.InlineKeyboardButton("⚠️ VPN: Файлы есть", callback_data="service_vpn_info"))
+        elif vpn_status_emoji == '➖':
+            service_buttons.append(types.InlineKeyboardButton("➖ VPN: Не настроен", callback_data="service_vpn_info"))
+        else:
+            service_buttons.append(types.InlineKeyboardButton("❓ VPN: Неизвестно", callback_data="service_vpn_info"))
+
         markup.add(*service_buttons)
         markup.add(types.InlineKeyboardButton("🔄 Обновить", callback_data="stats_refresh"))
         markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="menu_main"))
@@ -498,6 +533,20 @@ def setup_handlers(bot):
     @bot.callback_query_handler(func=lambda call: call.data.startswith("service_"))
     def handle_service_control(call):
         action = call.data.replace("service_", "")
+        
+        # Обработка VPN info
+        if action == "vpn_info":
+            bot.answer_callback_query(
+                call.id,
+                "ℹ️ VPN управляется через роутер Keenetic.\n\n"
+                "Для использования VPN:\n"
+                "1. Создайте файл vpn-<название>.txt\n"
+                "2. Добавьте домены/IP для обхода\n"
+                "3. Настройте VPN в веб-интерфейсе роутера",
+                show_alert=True
+            )
+            return
+        
         parts = action.rsplit('_', 1)
         if len(parts) != 2:
             bot.answer_callback_query(call.id, "❌ Неверная команда", show_alert=True)
@@ -515,14 +564,14 @@ def setup_handlers(bot):
             return
         name, init_script = services_map[service_name]
         status = "включение" if enable else "выключение"
-        
+
         # Показываем уведомление в процессе
         bot.answer_callback_query(call.id, f"⏳ {name} {status}...", show_alert=False)
-        
+
         try:
             cmd = [init_script, 'start' if enable else 'stop']
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-            
+
             if result.returncode == 0:
                 # Получаем новую статистику и обновляем сообщение
                 stats = get_stats()
