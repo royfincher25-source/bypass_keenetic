@@ -175,8 +175,18 @@ def setup_handlers(bot):
             # Используем сессию из utils для connection pooling
             from utils import get_http_session
             session = get_http_session()
-            # Добавляем timestamp для обхода кеша
-            response = session.get(f"{bot_url}/version.md?t={int(time.time())}", timeout=10)
+            # Добавляем заголовки для обхода кеша
+            headers = {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+            # Добавляем timestamp для уникальности URL
+            response = session.get(
+                f"{bot_url}/version.md?t={int(time.time())}",
+                headers=headers,
+                timeout=10
+            )
             return response.text.strip() if response.status_code == 200 else "N/A"
         except requests.exceptions.Timeout:
             return "N/A (timeout)"
