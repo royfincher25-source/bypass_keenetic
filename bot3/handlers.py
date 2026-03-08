@@ -348,6 +348,16 @@ def setup_handlers(bot):
         stats = get_stats()
         bot.send_message(message.chat.id, format_stats_message(stats), reply_markup=create_stats_keyboard())
 
+    @bot.message_handler(commands=['update'])
+    def update_command(message):
+        """Команда для ручного запуска обновления бота"""
+        if message.from_user.username not in config.usernames:
+            bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
+            return
+        # Эмулируем нажатие кнопки обновления
+        call = type('obj', (object,), {'message': message, 'data': 'trigger_update'})
+        handle_update(call)
+
     @bot.message_handler(content_types=['text'])
     def bot_message(message):
         if message.from_user.username not in config.usernames or message.chat.type != 'private':
@@ -432,7 +442,7 @@ def setup_handlers(bot):
         chat_id = call.message.chat.id
         bot.edit_message_reply_markup(chat_id=chat_id, message_id=call.message.message_id, reply_markup=None)
         msg = bot.send_message(chat_id, '⏳ Загрузка обновлений...')
-        
+
         try:
             download_bot_files()
             bot.edit_message_text('⏳ Файлы бота обновлены. Загрузка скрипта...', chat_id, msg.message_id)
@@ -442,7 +452,7 @@ def setup_handlers(bot):
             bot.edit_message_text(f'❌ Ошибка загрузки: {str(e)}', chat_id, msg.message_id)
             log_error(f"Error downloading updates: {str(e)}")
             return
-        
+
         with open(config.paths["chat_id_path"], 'w') as f:
             f.write(str(chat_id))
         process = subprocess.Popen([config.paths['script_sh'], '-update'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
@@ -454,10 +464,23 @@ def setup_handlers(bot):
             process.kill()
             bot.edit_message_text('❌ Превышен таймаут операции (5 минут)', chat_id, msg.message_id)
             log_error(f"Timeout expired for update script")
+            return
+
+        # Перезапуск бота с задержкой
+        bot.edit_message_text('✅ Бот обновлён! Перезапуск через 3 секунды...', chat_id, msg.message_id)
+        time.sleep(3)
         
-        bot.edit_message_text('✅ Бот обновлён! Перезапуск...', chat_id, msg.message_id)
-        time.sleep(2)
-        subprocess.Popen([config.paths["init_bot"], "restart"])
+        # Запускаем новый процесс бота в фоне
+        subprocess.Popen(
+            ['python3', config.paths["bot_path"]],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+            start_new_session=True
+        )
+        # Завершаем текущий процесс
+        import os
+        os._exit(0)
 
     @bot.callback_query_handler(func=lambda call: call.data == "install")
     def handle_install_callback(call):
