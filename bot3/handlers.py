@@ -4,9 +4,9 @@ import time
 from telebot import types
 import bot_config as config
 from menu import (
-    MENU_MAIN, MENU_BYPASS_FILES, MENU_SERVICE, MENU_KEYS_BRIDGES,
-    MENU_BYPASS_LIST, MENU_ADD_BYPASS, MENU_REMOVE_BYPASS,
-    MENU_TOR, MENU_SHADOWSOCKS, MENU_VLESS, MENU_TROJAN,
+    get_menu_main, get_menu_bypass_files, get_menu_service, get_menu_keys_bridges,
+    get_menu_bypass_list, get_menu_add_bypass, get_menu_remove_bypass,
+    get_menu_tor, get_menu_shadowsocks, get_menu_vless, get_menu_trojan,
     create_bypass_files_menu, create_backup_menu, BackupState, create_drive_selection_menu, create_delete_archive_menu,
     create_dns_override_menu, create_updates_menu, create_install_remove_menu
 )
@@ -19,26 +19,26 @@ class BotState:
     __slots__ = ['current_menu', 'selected_file']
     
     def __init__(self):
-        self.current_menu = MENU_MAIN
+        self.current_menu = get_menu_main()
         self.selected_file = ""
 
 def setup_handlers(bot):
     state = BotState()
     backup_state = BackupState()
-    
+
     def set_menu_and_reply(chat_id, new_menu, text=None, markup=None):
         state.current_menu = new_menu
         if not text:
             text = new_menu.name
         bot.send_message(chat_id, text, reply_markup=markup if markup else new_menu.markup)
-    
+
     def go_to_bypass_files(chat_id):
         create_bypass_files_menu()
-        set_menu_and_reply(chat_id, MENU_BYPASS_FILES)
+        set_menu_and_reply(chat_id, get_menu_bypass_files())
 
     def handle_bypass_files_selection(message):
         state.selected_file = message.text
-        set_menu_and_reply(message.chat.id, MENU_BYPASS_LIST, "Меню " + state.selected_file)
+        set_menu_and_reply(message.chat.id, get_menu_bypass_list(), "Меню " + state.selected_file)
 
     def send_long_message(chat_id, text, parse_mode=None):
         current_part = ""
@@ -57,11 +57,11 @@ def setup_handlers(bot):
             sites = sorted(load_bypass_list(filepath))
             text = "Список пуст" if not sites else "\n".join(sites)
             send_long_message(message.chat.id, text)
-            bot.send_message(message.chat.id, "Меню " + state.selected_file, reply_markup=MENU_BYPASS_LIST.markup)
+            bot.send_message(message.chat.id, "Меню " + state.selected_file, reply_markup=get_menu_bypass_list().markup)
         elif message.text == "➕ Добавить в список":
-            set_menu_and_reply(message.chat.id, MENU_ADD_BYPASS, "Введите сайт, домен или IP-адресс для добавления")
+            set_menu_and_reply(message.chat.id, get_menu_add_bypass(), "Введите сайт, домен или IP-адресс для добавления")
         elif message.text == "➖ Удалить из списка":
-            set_menu_and_reply(message.chat.id, MENU_REMOVE_BYPASS, "Введите сайт, домен или IP-адресс для удаления")
+            set_menu_and_reply(message.chat.id, get_menu_remove_bypass(), "Введите сайт, домен или IP-адресс для удаления")
 
     def handle_add_to_bypass(message):
         filepath = f"{config.paths['unblock_dir']}{state.selected_file}.txt"
@@ -75,7 +75,7 @@ def setup_handlers(bot):
             subprocess.run(config.services["unblock_update"])
         else:
             bot.send_message(message.chat.id, "❕Было добавлено ранее")
-        set_menu_and_reply(message.chat.id, MENU_BYPASS_LIST, "Меню " + state.selected_file)
+        set_menu_and_reply(message.chat.id, get_menu_bypass_list(), "Меню " + state.selected_file)
 
     def handle_remove_from_bypass(message):
         filepath = f"{config.paths['unblock_dir']}{state.selected_file}.txt"
@@ -88,17 +88,17 @@ def setup_handlers(bot):
             subprocess.run(config.services["unblock_update"])
         else:
             bot.send_message(message.chat.id, "❕Не найдено в списке")
-        set_menu_and_reply(message.chat.id, MENU_BYPASS_LIST, "Меню " + state.selected_file)
+        set_menu_and_reply(message.chat.id, get_menu_bypass_list(), "Меню " + state.selected_file)
 
     def handle_keys_bridges_selection(message):
         if message.text == 'Tor':
-            set_menu_and_reply(message.chat.id, MENU_TOR, "🔑 Вставьте мосты Tor")
+            set_menu_and_reply(message.chat.id, get_menu_tor(), "🔑 Вставьте мосты Tor")
         elif message.text == 'Shadowsocks':
-            set_menu_and_reply(message.chat.id, MENU_SHADOWSOCKS, "🔑 Вставьте ключ Shadowsocks")
+            set_menu_and_reply(message.chat.id, get_menu_shadowsocks(), "🔑 Вставьте ключ Shadowsocks")
         elif message.text == 'Vless':
-            set_menu_and_reply(message.chat.id, MENU_VLESS, "🔑 Вставьте ключ Vless")
+            set_menu_and_reply(message.chat.id, get_menu_vless(), "🔑 Вставьте ключ Vless")
         elif message.text == 'Trojan':
-            set_menu_and_reply(message.chat.id, MENU_TROJAN, "🔑 Вставьте ключ Trojan")
+            set_menu_and_reply(message.chat.id, get_menu_trojan(), "🔑 Вставьте ключ Trojan")
 
     def update_service(chat_id, service_name, config_func, restart_cmd):
         try:
@@ -117,33 +117,33 @@ def setup_handlers(bot):
     def handle_tor_manually(message):
         success, error = update_service(message.chat.id, "Tor", lambda: tor_config(message.text, bot, message.chat.id), config.services["tor_restart"])
         if success:
-            set_menu_and_reply(message.chat.id, MENU_KEYS_BRIDGES)
+            set_menu_and_reply(message.chat.id, get_menu_keys_bridges())
         else:
             bot.send_message(message.chat.id, "❕Попробуйте ввести мосты заново", reply_markup=state.current_menu.markup)
 
     def handle_shadowsocks(message):
         success, error = update_service(message.chat.id, "Shadowsocks", lambda: shadowsocks_config(message.text, bot, message.chat.id), config.services["shadowsocks_restart"])
         if success:
-            set_menu_and_reply(message.chat.id, MENU_KEYS_BRIDGES)
+            set_menu_and_reply(message.chat.id, get_menu_keys_bridges())
         else:
             bot.send_message(message.chat.id, "❕Попробуйте ввести ключ заново", reply_markup=state.current_menu.markup)
 
     def handle_vless(message):
         success, error = update_service(message.chat.id, "Vless", lambda: vless_config(message.text, bot, message.chat.id), config.services["vless_restart"])
         if success:
-            set_menu_and_reply(message.chat.id, MENU_KEYS_BRIDGES)
+            set_menu_and_reply(message.chat.id, get_menu_keys_bridges())
         else:
             bot.send_message(message.chat.id, "❕Попробуйте ввести ключ заново", reply_markup=state.current_menu.markup)
 
     def handle_trojan(message):
         success, error = update_service(message.chat.id, "Trojan", lambda: trojan_config(message.text, bot, message.chat.id), config.services["trojan_restart"])
         if success:
-            set_menu_and_reply(message.chat.id, MENU_KEYS_BRIDGES)
+            set_menu_and_reply(message.chat.id, get_menu_keys_bridges())
         else:
             bot.send_message(message.chat.id, "❕Попробуйте ввести ключ заново", reply_markup=state.current_menu.markup)
-        
+
     def handle_restart(chat_id):
-        bot.send_message(chat_id, "⏳ Бот будет перезапущен!\nЭто займет около 15-30 секунд", reply_markup=MENU_SERVICE.markup)
+        bot.send_message(chat_id, "⏳ Бот будет перезапущен!\nЭто займет около 15-30 секунд", reply_markup=get_menu_service().markup)
         with open(config.paths["chat_id_path"], 'w') as f:
             f.write(str(chat_id))
         subprocess.Popen(config.services['service_script'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
@@ -292,17 +292,17 @@ def setup_handlers(bot):
     MENU_TRANSITIONS = {
         '🔙 Назад': lambda chat_id: (
         set_menu_and_reply(chat_id, next(
-            (m for m in [MENU_MAIN, MENU_SERVICE, MENU_BYPASS_FILES, MENU_KEYS_BRIDGES,
-                         MENU_TOR, MENU_SHADOWSOCKS, MENU_VLESS, MENU_TROJAN,
-                         MENU_BYPASS_LIST, MENU_ADD_BYPASS, MENU_REMOVE_BYPASS]
-             if m.level == state.current_menu.back_level), MENU_MAIN))
+            (m for m in [get_menu_main(), get_menu_service(), get_menu_bypass_files(), get_menu_keys_bridges(),
+                         get_menu_tor(), get_menu_shadowsocks(), get_menu_vless(), get_menu_trojan(),
+                         get_menu_bypass_list(), get_menu_add_bypass(), get_menu_remove_bypass()]
+             if m.level == state.current_menu.back_level), get_menu_main()))
         ),
         '📑 Списки обхода': go_to_bypass_files,
-        '🔑 Ключи и мосты': lambda chat_id: set_menu_and_reply(chat_id, MENU_KEYS_BRIDGES),
-        '⚙️ Сервис': lambda chat_id: set_menu_and_reply(chat_id, MENU_SERVICE),
+        '🔑 Ключи и мосты': lambda chat_id: set_menu_and_reply(chat_id, get_menu_keys_bridges()),
+        '⚙️ Сервис': lambda chat_id: set_menu_and_reply(chat_id, get_menu_service()),
         '🤖 Перезапуск бота': lambda chat_id: handle_restart(chat_id),
         '🔌 Перезапуск роутера': lambda chat_id: (
-            bot.send_message(chat_id, "⏳ Роутер будет перезапущен!\nЭто займет около 2 минут", reply_markup=MENU_SERVICE.markup),
+            bot.send_message(chat_id, "⏳ Роутер будет перезапущен!\nЭто займет около 2 минут", reply_markup=get_menu_service().markup),
             subprocess.run(["ndmc", "-c", "system reboot"])
         ),
         '⁉️ DNS Override': lambda chat_id: handle_dns_override(chat_id),
@@ -312,7 +312,7 @@ def setup_handlers(bot):
             update_service(chat_id, "Tor", lambda: None, config.services["tor_restart"]),
             update_service(chat_id, "Vless", lambda: None, config.services["vless_restart"]),
             update_service(chat_id, "Trojan", lambda: None, config.services["trojan_restart"]),
-            bot.send_message(chat_id, '❕ Перезапуск сервисов завершен', reply_markup=MENU_MAIN.markup)
+            bot.send_message(chat_id, '❕ Перезапуск сервисов завершен', reply_markup=get_menu_main().markup)
         ),
         '🆕 Обновления': lambda chat_id: handle_updates(chat_id),
         '📲 Установка и удаление': lambda chat_id: handle_install_remove(chat_id),
@@ -337,7 +337,7 @@ def setup_handlers(bot):
         if message.from_user.username not in config.usernames:
             bot.send_message(message.chat.id, '⚠️ Вы не являетесь автором канала!')
             return
-        set_menu_and_reply(message.chat.id, MENU_MAIN)
+        set_menu_and_reply(message.chat.id, get_menu_main())
 
     @bot.message_handler(commands=['stats'])
     def stats_command(message):
@@ -360,9 +360,9 @@ def setup_handlers(bot):
 
     @bot.callback_query_handler(func=lambda call: call.data == "menu_service")
     def handle_backup_return(call):
-        state.current_menu = MENU_SERVICE
+        state.current_menu = get_menu_service()
         bot.delete_message(call.message.chat.id, call.message.message_id)
-        bot.send_message(call.message.chat.id, MENU_SERVICE.name, reply_markup=MENU_SERVICE.markup)
+        bot.send_message(call.message.chat.id, state.current_menu.name, reply_markup=state.current_menu.markup)
         backup_state.__init__()
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith("backup_toggle_"))
@@ -475,9 +475,9 @@ def setup_handlers(bot):
             log_error(f"Timeout expired for install script")
             return
         if process.returncode == 0:
-            bot.send_message(chat_id, '✅ Установка завершена', reply_markup=MENU_MAIN.markup)
+            bot.send_message(chat_id, '✅ Установка завершена', reply_markup=get_menu_main().markup)
         else:
-            bot.send_message(chat_id, '❌ Установка завершилась с ошибкой', reply_markup=MENU_MAIN.markup)
+            bot.send_message(chat_id, '❌ Установка завершилась с ошибкой', reply_markup=get_menu_main().markup)
 
     @bot.callback_query_handler(func=lambda call: call.data == "remove")
     def handle_remove_callback(call):
@@ -496,15 +496,15 @@ def setup_handlers(bot):
             log_error(f"Timeout expired for remove script")
             return
         if process.returncode == 0:
-            bot.send_message(chat_id, '✅ Удаление завершено', reply_markup=MENU_MAIN.markup)
+            bot.send_message(chat_id, '✅ Удаление завершено', reply_markup=get_menu_main().markup)
         else:
-            bot.send_message(chat_id, '❌ Ошибка при удалении', reply_markup=MENU_MAIN.markup)
+            bot.send_message(chat_id, '❌ Ошибка при удалении', reply_markup=get_menu_main().markup)
 
     @bot.callback_query_handler(func=lambda call: call.data == "menu_main")
     def handle_back_to_main(call):
-        state.current_menu = MENU_MAIN
+        state.current_menu = get_menu_main()
         bot.delete_message(call.message.chat.id, call.message.message_id)
-        bot.send_message(call.message.chat.id, MENU_MAIN.name, reply_markup=MENU_MAIN.markup)
+        bot.send_message(call.message.chat.id, state.current_menu.name, reply_markup=state.current_menu.markup)
 
     @bot.callback_query_handler(func=lambda call: call.data == "stats_refresh")
     def handle_stats_refresh(call):

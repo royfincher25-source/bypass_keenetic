@@ -113,33 +113,51 @@ def create_install_remove_menu():
     markup.add(create_button("🔙 Назад", "menu_main"))
     return markup
 
-MENU_MAIN = Menu("🤖 Добро пожаловать в меню!", create_menu([
-    ["🔑 Ключи и мосты", "📑 Списки обхода"],
-    ["📲 Установка и удаление", "📊 Статистика", "⚙️ Сервис"]
-]), 0)
 
-MENU_BYPASS_FILES = Menu("📑 Списки обхода", None, 1, 0)
+# Фабричные функции для lazy инициализации меню (экономия памяти при старте)
 
-MENU_BYPASS_LIST = Menu("Выберите действие:", create_menu([
-    ["📄 Показать список", "➕ Добавить в список", "➖ Удалить из списка"],
-    ["🔙 Назад"]
-]), 2, 1)
+def get_menu_main():
+    return Menu("🤖 Добро пожаловать в меню!", create_menu([
+        ["🔑 Ключи и мосты", "📑 Списки обхода"],
+        ["📲 Установка и удаление", "📊 Статистика", "⚙️ Сервис"]
+    ]), 0)
 
-MENU_ADD_BYPASS = Menu("➕ Добавить в список", create_menu([["🔙 Назад"]]), 3, 2)
-MENU_REMOVE_BYPASS = Menu("➖ Удалить из списка", create_menu([["🔙 Назад"]]), 4, 2)
+def get_menu_bypass_files():
+    return Menu("📑 Списки обхода", None, 1, 0)
 
-MENU_KEYS_BRIDGES = Menu("🔑 Ключи и мосты", create_menu([
-    ["Tor", "Vless", "Trojan", "Shadowsocks"],
-    ["🔙 Назад"]
-]), 5, 0)
+def get_menu_bypass_list():
+    return Menu("Выберите действие:", create_menu([
+        ["📄 Показать список", "➕ Добавить в список", "➖ Удалить из списка"],
+        ["🔙 Назад"]
+    ]), 2, 1)
 
-MENU_TOR = Menu("Tor", create_menu([["🔙 Назад"]]), 8, 5)
-MENU_SHADOWSOCKS = Menu("Shadowsocks", create_menu([["🔙 Назад"]]), 9, 5)
-MENU_VLESS = Menu("Vless", create_menu([["🔙 Назад"]]), 10, 5)
-MENU_TROJAN = Menu("Trojan", create_menu([["🔙 Назад"]]), 11, 5)
+def get_menu_add_bypass():
+    return Menu("➕ Добавить в список", create_menu([["🔙 Назад"]]), 3, 2)
 
-MENU_SERVICE = Menu("⚙️ Сервисное меню!", create_menu([
-    ["🤖 Перезапуск бота", "🔌 Перезапуск роутера", "🔁 Перезапуск сервисов"],
-    ["⁉️ DNS Override", "🆕 Обновления", "💾 Бэкап"],
-    ["🔙 Назад"]
-]), 6, 0)
+def get_menu_remove_bypass():
+    return Menu("➖ Удалить из списка", create_menu([["🔙 Назад"]]), 4, 2)
+
+def get_menu_keys_bridges():
+    return Menu("🔑 Ключи и мосты", create_menu([
+        ["Tor", "Vless", "Trojan", "Shadowsocks"],
+        ["🔙 Назад"]
+    ]), 5, 0)
+
+def get_menu_tor():
+    return Menu("Tor", create_menu([["🔙 Назад"]]), 8, 5)
+
+def get_menu_shadowsocks():
+    return Menu("Shadowsocks", create_menu([["🔙 Назад"]]), 9, 5)
+
+def get_menu_vless():
+    return Menu("Vless", create_menu([["🔙 Назад"]]), 10, 5)
+
+def get_menu_trojan():
+    return Menu("Trojan", create_menu([["🔙 Назад"]]), 11, 5)
+
+def get_menu_service():
+    return Menu("⚙️ Сервисное меню!", create_menu([
+        ["🤖 Перезапуск бота", "🔌 Перезапуск роутера", "🔁 Перезапуск сервисов"],
+        ["⁉️ DNS Override", "🆕 Обновления", "💾 Бэкап"],
+        ["🔙 Назад"]
+    ]), 6, 0)
