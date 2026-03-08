@@ -434,25 +434,30 @@ def setup_handlers(bot):
                 bot.edit_message_text(f'❌ {name}: скрипт {init_script} не найден', msg.chat.id, msg.message_id)
                 return
             
-            # Пробуем start/stop
+            # Выполняем команду
             cmd = [init_script, 'start' if enable else 'stop']
+            log_error(f"Running command: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            log_error(f"Command result: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
             
             # Если не сработало, пробуем restart (для некоторых сервисов)
             if result.returncode != 0 and enable:
                 log_error(f"Start failed for {name}, trying restart: {result.stderr}")
                 cmd = [init_script, 'restart']
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                log_error(f"Restart result: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
             
-            # Если всё ещё ошибка, пробуем для Trojan special case
-            if result.returncode != 0 and service_name == 'trojan':
-                # Trojan может требовать установку через opkg
-                log_error(f"Trojan control failed, checking installation...")
-                check_result = subprocess.run(['opkg', 'list-installed', '|', 'grep', 'trojan'], 
-                                           capture_output=True, text=True, shell=True, timeout=10)
-                if not check_result.stdout:
-                    bot.edit_message_text(f'❌ {name}: не установлен. Установите через меню', msg.chat.id, msg.message_id)
-                    return
+            # Проверяем статус после включения
+            if enable and result.returncode == 0:
+                time.sleep(2)  # Ждём запуска
+                status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=10)
+                log_error(f"Status check: returncode={status_result.returncode}, output={status_result.stdout}")
+                if status_result.returncode != 0:
+                    log_error(f"{name} started but status check failed")
+                    # Для Trojan это может быть нормально, показываем предупреждение
+                    if service_name == 'trojan':
+                        bot.edit_message_text(f'⚠️ {name} запущен, но статус не подтверждён. Проверьте вручную.', msg.chat.id, msg.message_id)
+                        return
             
             if result.returncode == 0:
                 bot.edit_message_text(f'✅ {name} {"включён" if enable else "выключен"}', msg.chat.id, msg.message_id)
