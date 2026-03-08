@@ -428,16 +428,25 @@ def setup_handlers(bot):
         status = "включение" if enable else "выключение"
         msg = bot.send_message(message.chat.id, f'⏳ {name} {status}...')
         try:
+            # Пробуем start/stop
             cmd = [init_script, 'start' if enable else 'stop']
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            # Если не сработало, пробуем restart (для некоторых сервисов)
+            if result.returncode != 0 and enable:
+                cmd = [init_script, 'restart']
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
             if result.returncode == 0:
                 bot.edit_message_text(f'✅ {name} {"включён" if enable else "выключен"}', msg.chat.id, msg.message_id)
             else:
                 error = result.stderr.strip() or result.stdout.strip() or "Неизвестная ошибка"
+                log_error(f"Service control error ({name}): {error}")
                 bot.edit_message_text(f'❌ Ошибка: {error}', msg.chat.id, msg.message_id)
         except subprocess.TimeoutExpired:
             bot.edit_message_text(f'❌ Таймаут операции ({name})', msg.chat.id, msg.message_id)
         except Exception as e:
+            log_error(f"Service control exception ({name}): {str(e)}")
             bot.edit_message_text(f'❌ Ошибка: {str(e)}', msg.chat.id, msg.message_id)
 
     @bot.callback_query_handler(func=lambda call: call.data.startswith("service_"))
