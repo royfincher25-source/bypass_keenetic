@@ -532,10 +532,16 @@ def setup_handlers(bot):
 
     @bot.callback_query_handler(func=lambda call: call.data == "stats_refresh")
     def handle_stats_refresh(call):
-        stats = get_stats()
-        bot.edit_message_text(
-            format_stats_message(stats),
-            call.message.chat.id,
-            call.message.message_id,
-            reply_markup=create_stats_keyboard()
-        )
+        try:
+            stats = get_stats()
+            bot.edit_message_text(
+                format_stats_message(stats),
+                call.message.chat.id,
+                call.message.message_id,
+                reply_markup=create_stats_keyboard()
+            )
+        except Exception as e:
+            # Игнорируем ошибку "message is not modified" (Telegram API error 400)
+            if "message is not modified" not in str(e):
+                log_error(f"Error refreshing stats: {e}")
+                bot.answer_callback_query(call.id, "❌ Ошибка обновления статистики", show_alert=True)
