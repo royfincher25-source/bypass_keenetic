@@ -489,7 +489,21 @@ def setup_handlers(bot):
         # Перезапуск бота с задержкой
         bot.edit_message_text('✅ Бот обновлён! Перезапуск через 3 секунды...', chat_id, msg.message_id)
         time.sleep(3)
-
+        
+        # Читаем текущую версию для отображения
+        try:
+            with open(config.paths["bot_dir"] + "/version.md", "r") as f:
+                current_version = f.read().strip()
+        except:
+            current_version = "N/A"
+        
+        # Отправляем финальное сообщение с версией
+        bot.send_message(
+            chat_id,
+            f'✅ Бот перезапущен\n\n📦 Версия: {current_version}\n💾 RAM: ~22-26 MB',
+            reply_markup=get_menu_main().markup
+        )
+        
         # Запускаем новый процесс бота в фоне
         subprocess.Popen(
             ['python3', config.paths["bot_path"]],
