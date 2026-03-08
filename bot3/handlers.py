@@ -185,11 +185,12 @@ def setup_handlers(bot):
         bot_new_version = get_remote_version(config.bot_url)
         bot_version = get_local_version()        
         service_update_info = f"Установленная версия: {bot_version}\nДоступная на git версия: {bot_new_version}"
-        need_update = False
+        need_update = True  # Всегда показывать кнопку обновления
         if bot_version != "N/A" and bot_new_version != "N/A":
             try:
-                if tuple(map(int, bot_version.split("."))) < tuple(map(int, bot_new_version.split("."))):
-                    need_update = True
+                if tuple(map(int, bot_version.split("."))) >= tuple(map(int, bot_new_version.split("."))):
+                    need_update = False  # Скрыть если версия актуальна
+                    service_update_info += "\n✅ У вас последняя версия!"
             except ValueError:
                 service_update_info += "\nОшибка: версии имеют неверный формат"
         else:
