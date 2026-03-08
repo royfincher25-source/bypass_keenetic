@@ -313,9 +313,19 @@ def setup_handlers(bot):
     @bot.callback_query_handler(func=lambda call: call.data == "trigger_update")
     def handle_update(call):
         chat_id = call.message.chat.id
-        download_script()
         bot.edit_message_reply_markup(chat_id=chat_id, message_id=call.message.message_id, reply_markup=None)
-        msg = bot.send_message(chat_id, '⏳ Устанавливаются обновления, подождите!')
+        msg = bot.send_message(chat_id, '⏳ Загрузка обновлений...')
+        
+        try:
+            download_bot_files()
+            bot.edit_message_text('⏳ Файлы бота обновлены. Загрузка скрипта...', chat_id, msg.message_id)
+            download_script()
+            bot.edit_message_text('⏳ Скрипт обновлён. Выполняю установку...', chat_id, msg.message_id)
+        except Exception as e:
+            bot.edit_message_text(f'❌ Ошибка загрузки: {str(e)}', chat_id, msg.message_id)
+            log_error(f"Error downloading updates: {str(e)}")
+            return
+        
         with open(config.paths["chat_id_path"], 'w') as f:
             f.write(str(chat_id))
         process = subprocess.Popen([config.paths['script_sh'], '-update'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
