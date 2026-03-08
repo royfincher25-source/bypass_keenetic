@@ -39,15 +39,6 @@ if __name__ == "__main__":
     # Запуск бота и обработчиков
     setup_handlers(bot)
     check_restart(bot)
-    
-    # Проверка статусов сервисов при старте (для актуальной статистики)
-    log_error("=== Бот запущен ===")
-    try:
-        from handlers import get_stats
-        stats = get_stats()
-        log_error(f"Статусы сервисов: Tor={stats['tor_status']}, VLESS={stats['vless_status']}, Trojan={stats['trojan_status']}, SS={stats['shadowsocks_status']}")
-    except Exception as e:
-        log_error(f"Ошибка проверки статусов: {e}")
 
     # Параметры polling: long_polling_timeout=30 (ожидание от Telegram),
     # timeout=35 (общий HTTP таймаут), interval=1 (задержка при ошибке)
