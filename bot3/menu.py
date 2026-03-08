@@ -3,6 +3,8 @@ import bot_config as config
 import os
 
 class Menu:
+    __slots__ = ['name', 'markup', 'level', 'back_level']
+    
     def __init__(self, name, markup, level, back_level=None):
         self.name = name
         self.markup = markup
@@ -10,6 +12,9 @@ class Menu:
         self.back_level = back_level
 
 class BackupState:
+    __slots__ = ['startup_config', 'firmware', 'entware', 'custom_files', 
+                 'selected_drive', 'delete_archive', 'selection_msg_id']
+    
     def __init__(self):
         self.startup_config = False
         self.firmware = False
@@ -17,6 +22,7 @@ class BackupState:
         self.custom_files = False
         self.selected_drive = None
         self.delete_archive = False
+        self.selection_msg_id = None
 
     def get_selected_count(self):
         return sum([self.startup_config, self.firmware, self.entware, self.custom_files])
