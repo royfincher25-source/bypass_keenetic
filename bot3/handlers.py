@@ -848,12 +848,12 @@ def setup_handlers(bot):
 
     @bot.callback_query_handler(func=lambda call: call.data == "stats_refresh")
     def handle_stats_refresh(call):
-        # Быстрое обновление (только RAM и uptime, без проверки сервисов)
+        # Полное обновление (RAM, uptime + статусы сервисов)
         bot.answer_callback_query(call.id, "⏳ Обновление...", show_alert=False)
-        
+
         try:
-            # Не проверяем сервисы повторно - они уже актуальны
-            stats = get_stats(refresh_services=False)
+            # Проверяем сервисы для актуальных статусов
+            stats = get_stats(refresh_services=True)
             bot.edit_message_text(
                 format_stats_message(stats),
                 call.message.chat.id,
