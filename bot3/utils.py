@@ -389,16 +389,17 @@ def save_bypass_list(filepath, sites):
 def check_restart(bot):
     """Проверка перезапуска бота"""
     chat_id_path = config.paths["chat_id_path"]
-    
+
     if os.path.exists(chat_id_path):
         try:
             with open(chat_id_path, 'r') as f:
                 chat_id = int(f.read().strip())
-            
-            bot.send_message(chat_id, '✅ Бот перезапущен')
+
+            # Не отправляем сообщение - оно уже отправлено в handle_update()
+            # Просто очищаем файл
             os.remove(chat_id_path)
         except Exception as e:
-            log_error(f"Ошибка при отправке сообщения после перезапуска: {str(e)}")
+            log_error(f"Ошибка при очистке chat_id_path: {str(e)}")
             try:
                 os.remove(chat_id_path)
             except:
