@@ -277,12 +277,6 @@ def setup_handlers(bot):
 
         return stats
 
-    def create_stats_keyboard():
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("🔄 Обновить", callback_data="stats_refresh"))
-        markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="menu_main"))
-        return markup
-
     def format_stats_message(stats):
         return (
             f"📊 Статистика бота\n"
@@ -465,6 +459,10 @@ def setup_handlers(bot):
                     log_error(f"{name} not stopped, status still shows running")
                     result.returncode = 1  # Помечаем как ошибку
                     result.stdout = "Сервис не остановлен"
+            
+            # Для Trojan показываем предупреждение если статус failed
+            if enable and result.returncode == 0 and service_name == 'trojan':
+                log_error(f"✅ {name} started successfully (status check skipped)")
             
             if result.returncode == 0:
                 bot.edit_message_text(f'✅ {name} {"включён" if enable else "выключен"}', msg.chat.id, msg.message_id)
