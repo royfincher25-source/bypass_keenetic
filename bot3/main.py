@@ -40,10 +40,12 @@ if __name__ == "__main__":
     setup_handlers(bot)
     check_restart(bot)
     
+    # Параметры polling: long_polling_timeout=30 (ожидание от Telegram),
+    # timeout=35 (общий HTTP таймаут), interval=1 (задержка при ошибке)
     restart_count = 0
     while restart_count < config.MAX_RESTARTS:
         try:
-            bot.infinity_polling()
+            bot.infinity_polling(long_polling_timeout=30, timeout=35, interval=1)
         except (telebot.apihelper.ApiException, requests.exceptions.RequestException) as err:
             log_error(f"Ошибка соединения или Telegram API: {str(err)}")
             restart_count += 1

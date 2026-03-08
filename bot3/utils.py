@@ -15,8 +15,6 @@ import subprocess
 import json
 import re
 import gc
-from urllib.parse import urlparse, parse_qs
-import base64
 
 # Импорт общих функций из core модуля
 from core import (
@@ -370,6 +368,8 @@ def notify_on_error():
 @notify_on_error()
 def parse_vless_key(key, bot=None, chat_id=None):
     """Парсинг VLESS ключа с кэшированием"""
+    from urllib.parse import urlparse, parse_qs
+    
     cache_key = f'vless:{key}'
     
     if Cache.is_valid(cache_key):
@@ -412,6 +412,9 @@ def parse_vless_key(key, bot=None, chat_id=None):
 @notify_on_error()
 def parse_trojan_key(key, bot=None, chat_id=None):
     """Парсинг Trojan ключа с кэшированием"""
+    from urllib.parse import urlparse
+    import base64
+    
     cache_key = f'trojan:{key}'
     
     if Cache.is_valid(cache_key):
@@ -446,6 +449,8 @@ def parse_trojan_key(key, bot=None, chat_id=None):
 @notify_on_error()
 def parse_shadowsocks_key(key, bot=None, chat_id=None):
     """Парсинг Shadowsocks ключа с кэшированием"""
+    from urllib.parse import urlparse
+    
     cache_key = f'ss:{key}'
     
     if Cache.is_valid(cache_key):

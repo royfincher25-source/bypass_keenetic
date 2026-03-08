@@ -1,5 +1,4 @@
 import subprocess
-import requests
 import os
 import time
 from telebot import types
@@ -10,7 +9,7 @@ from menu import (
     create_updates_menu, create_install_remove_menu
 )
 from utils import (
-    download_script, download_bot_files, vless_config, tor_config, get_available_drives, create_backup_with_params
+    download_script, download_bot_files, vless_config, tor_config, get_available_drives, create_backup_with_params, log_error
 )
 
 class BotState:
@@ -87,6 +86,7 @@ def setup_handlers(bot):
             return "N/A"
 
     def get_remote_version(bot_url):
+        import requests
         try:
             # Используем сессию из utils для connection pooling
             from utils import get_http_session

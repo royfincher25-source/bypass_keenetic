@@ -1,10 +1,7 @@
 import subprocess
-import requests
 import os
 import time
 from telebot import types
-from urllib.parse import urlparse, parse_qs
-import base64
 import bot_config as config
 from menu import (
     MENU_MAIN, MENU_BYPASS_FILES, MENU_SERVICE, MENU_KEYS_BRIDGES,
@@ -15,7 +12,7 @@ from menu import (
 )
 from utils import (
     download_script, download_bot_files, load_bypass_list, save_bypass_list, vless_config, trojan_config,
-    shadowsocks_config, tor_config, get_available_drives, create_backup_with_params
+    shadowsocks_config, tor_config, get_available_drives, create_backup_with_params, log_error
 )
 
 class BotState:
@@ -170,6 +167,7 @@ def setup_handlers(bot):
             return "N/A"
 
     def get_remote_version(bot_url):
+        import requests
         try:
             # Используем сессию из utils для connection pooling
             from utils import get_http_session
