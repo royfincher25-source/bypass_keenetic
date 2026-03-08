@@ -233,6 +233,23 @@ def download_script():
         log_error(f"Ошибка при загрузке скрипта: {str(e)}")
         raise
 
+def download_bot_files():
+    bot_files = ['handlers.py', 'menu.py', 'utils.py', 'main.py']
+    bot_dir = os.path.dirname(__file__)
+    
+    for filename in bot_files:
+        try:
+            url = f"{config.bot_url}/{filename}"
+            local_path = os.path.join(bot_dir, filename)
+            response = get_http_session().get(url, timeout=30, stream=True)
+            response.raise_for_status()
+            with open(local_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        except Exception as e:
+            log_error(f"Ошибка при загрузке {filename}: {str(e)}")
+            raise
+
 
 # =============================================================================
 # РАБОТА СО СПИСКАМИ ОБХОДА (ОПТИМИЗИРОВАНО)

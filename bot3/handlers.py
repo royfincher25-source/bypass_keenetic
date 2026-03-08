@@ -14,7 +14,7 @@ from menu import (
     create_dns_override_menu, create_updates_menu, create_install_remove_menu
 )
 from utils import (
-    download_script, load_bypass_list, save_bypass_list, vless_config, trojan_config,
+    download_script, download_bot_files, load_bypass_list, save_bypass_list, vless_config, trojan_config,
     shadowsocks_config, tor_config, get_available_drives, create_backup_with_params
 )
 
@@ -197,6 +197,85 @@ def setup_handlers(bot):
         inline_keyboard = create_updates_menu(need_update)
         bot.send_message(chat_id, service_update_info, reply_markup=inline_keyboard)
 
+    def get_stats():
+        stats = {
+            'bot_ram_mb': 0,
+            'system_ram_total_mb': 0,
+            'system_ram_free_mb': 0,
+            'bot_uptime': 'N/A',
+            'restart_count': 0,
+            'tor_status': 'N/A',
+            'vless_status': 'N/A'
+        }
+        
+        bot_pid = os.getpid()
+        
+        try:
+            with open(f'/proc/{bot_pid}/status', 'r') as f:
+                for line in f:
+                    if line.startswith('VmRSS:'):
+                        stats['bot_ram_mb'] = int(line.split()[1]) / 1024
+                        break
+        except Exception:
+            pass
+        
+        try:
+            meminfo = subprocess.check_output(['cat', '/proc/meminfo'], text=True)
+            for line in meminfo.splitlines():
+                if line.startswith('MemTotal:'):
+                    stats['system_ram_total_mb'] = int(line.split()[1]) / 1024
+                elif line.startswith('MemAvailable:'):
+                    stats['system_ram_free_mb'] = int(line.split()[1]) / 1024
+                    break
+        except Exception:
+            pass
+        
+        try:
+            uptime_seconds = float(subprocess.check_output(['cat', '/proc/uptime'], text=True).split()[0])
+            hours = int(uptime_seconds // 3600)
+            minutes = int((uptime_seconds % 3600) // 60)
+            stats['bot_uptime'] = f"{hours}ч {minutes}мин"
+        except Exception:
+            pass
+        
+        stats['restart_count'] = config.MAX_RESTARTS
+        
+        for service_name, init_script in [('Tor', config.services["tor_restart"][0]), ('VLESS', config.services["vless_restart"][0])]:
+            try:
+                result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=5)
+                status = '✅' if result.returncode == 0 else '❌'
+            except Exception:
+                status = '❓'
+            
+            if service_name == 'Tor':
+                stats['tor_status'] = status
+            else:
+                stats['vless_status'] = status
+        
+        return stats
+
+    def create_stats_keyboard():
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🔄 Обновить", callback_data="stats_refresh"))
+        markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="menu_main"))
+        return markup
+
+    def format_stats_message(stats):
+        return (
+            f"📊 Статистика бота\n"
+            f"━━━━━━━━━━━━━━━━\n"
+            f"🧠 RAM бота: {stats['bot_ram_mb']:.1f} MB\n"
+            f"💻 Система: {stats['system_ram_free_mb']:.0f}/{stats['system_ram_total_mb']:.0f} MB свободно\n"
+            f"⏱️ Uptime: {stats['bot_uptime']}\n"
+            f"🔄 Перезапусков: {stats['restart_count']}\n\n"
+            f"🔵 Tor: {stats['tor_status']}\n"
+            f"🔷 VLESS: {stats['vless_status']}"
+        )
+
+    def handle_stats(chat_id):
+        stats = get_stats()
+        bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard())
+
     def toggle_dns_override(chat_id, enable: bool):
         command = ["ndmc", "-c", "opkg dns-override"] if enable else ["ndmc", "-c", "no opkg dns-override"]
         status_text = "включен" if enable else "выключен"
@@ -236,7 +315,8 @@ def setup_handlers(bot):
         ),
         '🆕 Обновления': lambda chat_id: handle_updates(chat_id),
         '📲 Установка и удаление': lambda chat_id: handle_install_remove(chat_id),
-        '💾 Бэкап': lambda chat_id: handle_backup(chat_id)
+        '💾 Бэкап': lambda chat_id: handle_backup(chat_id),
+        '📊 Статистика': lambda chat_id: handle_stats(chat_id)
     }
 
     LEVEL_HANDLERS = {
@@ -257,6 +337,14 @@ def setup_handlers(bot):
             bot.send_message(message.chat.id, '⚠️ Вы не являетесь автором канала!')
             return
         set_menu_and_reply(message.chat.id, MENU_MAIN)
+
+    @bot.message_handler(commands=['stats'])
+    def stats_command(message):
+        if message.from_user.username not in config.usernames:
+            bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
+            return
+        stats = get_stats()
+        bot.send_message(message.chat.id, format_stats_message(stats), reply_markup=create_stats_keyboard())
 
     @bot.message_handler(content_types=['text'])
     def bot_message(message):
@@ -340,9 +428,19 @@ def setup_handlers(bot):
     @bot.callback_query_handler(func=lambda call: call.data == "trigger_update")
     def handle_update(call):
         chat_id = call.message.chat.id
-        download_script()
         bot.edit_message_reply_markup(chat_id=chat_id, message_id=call.message.message_id, reply_markup=None)
-        msg = bot.send_message(chat_id, '⏳ Устанавливаются обновления, подождите!')
+        msg = bot.send_message(chat_id, '⏳ Загрузка обновлений...')
+        
+        try:
+            download_bot_files()
+            bot.edit_message_text('⏳ Файлы бота обновлены. Загрузка скрипта...', chat_id, msg.message_id)
+            download_script()
+            bot.edit_message_text('⏳ Скрипт обновлён. Выполняю установку...', chat_id, msg.message_id)
+        except Exception as e:
+            bot.edit_message_text(f'❌ Ошибка загрузки: {str(e)}', chat_id, msg.message_id)
+            log_error(f"Error downloading updates: {str(e)}")
+            return
+        
         with open(config.paths["chat_id_path"], 'w') as f:
             f.write(str(chat_id))
         process = subprocess.Popen([config.paths['script_sh'], '-update'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
@@ -402,3 +500,13 @@ def setup_handlers(bot):
         state.current_menu = MENU_MAIN
         bot.delete_message(call.message.chat.id, call.message.message_id)
         bot.send_message(call.message.chat.id, MENU_MAIN.name, reply_markup=MENU_MAIN.markup)
+
+    @bot.callback_query_handler(func=lambda call: call.data == "stats_refresh")
+    def handle_stats_refresh(call):
+        stats = get_stats()
+        bot.edit_message_text(
+            format_stats_message(stats),
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=create_stats_keyboard()
+        )
