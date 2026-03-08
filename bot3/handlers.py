@@ -17,17 +17,26 @@ from utils import (
 
 class HandlerState:
     """Оптимизированное состояние обработчиков с __slots__ для экономии памяти"""
-    __slots__ = ['current_menu', 'selected_file', 'backup_state']
+    __slots__ = ['current_menu', 'selected_file', 'backup_state', 'last_stats_message_id']
     
     def __init__(self):
         self.current_menu = get_menu_main()
         self.selected_file = ""
         self.backup_state = BackupState()
+        self.last_stats_message_id = None  # ID последнего сообщения статистики
 
 def setup_handlers(bot):
     state = HandlerState()
 
     def set_menu_and_reply(chat_id, new_menu, text=None, markup=None):
+        # Закрываем окно статистики если оно открыто
+        if state.last_stats_message_id:
+            try:
+                bot.delete_message(chat_id, state.last_stats_message_id)
+                state.last_stats_message_id = None
+            except:
+                pass  # Игнорируем ошибку если сообщение уже удалено
+        
         state.current_menu = new_menu
         if not text:
             text = new_menu.name
@@ -378,7 +387,8 @@ def setup_handlers(bot):
 
     def handle_stats(chat_id):
         stats = get_stats()
-        bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
+        msg = bot.send_message(chat_id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
+        state.last_stats_message_id = msg.message_id  # Сохраняем ID сообщения
 
     def toggle_dns_override(chat_id, enable: bool):
         command = ["ndmc", "-c", "opkg dns-override"] if enable else ["ndmc", "-c", "no opkg dns-override"]
