@@ -264,7 +264,7 @@ if [ "$1" = "-install" ]; then
 
     # Установка скрипта для создания бекапов через telegram
     mkdir -p "$KEENSNAP_DIR"
-    curl -s -o "$SCRIPT_BU" "$BASE_URL/KeenSnap/keensnap.sh" || exit 1
+    curl -s -o "$SCRIPT_BU" "$BASE_URL/deploy/backup/keensnap/keensnap.sh" || exit 1
     chmod 755 "$SCRIPT_BU"
     echo "Установлен скрипт для создания бекапов через telegram"
     
@@ -294,7 +294,7 @@ if [ "$1" = "-update" ]; then
     #curl -s -o "$BOT_DIR/menu.py" "$BOT_URL/menu.py" || exit 1
     #curl -s -o "$BOT_DIR/handlers.py" "$BOT_URL/handlers.py" || exit 1
 	curl -s -o "$TEMPLATES_DIR/tor_template.torrc" "$BASE_URL/tor_template.torrc" && echo "Шаблон Tor обновлен"
-    #curl -s -o "$SCRIPT_BU" "$BASE_URL/KeenSnap/keensnap.sh" || exit 1
+    #curl -s -o "$SCRIPT_BU" "$BASE_URL/deploy/backup/keensnap/keensnap.sh" || exit 1
 	curl -s -o "$REDIRECT_SCRIPT" "$BASE_URL/100-redirect.sh" || exit 1
     curl -s -o "$INIT_BOT" "$BOT_URL/S99telegram_bot" || exit 1
     echo "Обновления для бота загружены, применяем права"
