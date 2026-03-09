@@ -976,9 +976,10 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     f.write("# Backup failed - no files available\n")
                     f.write(f"# Time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 file_size_mb = 0.001
+                archive_path_safe = archive_path.replace('_', '\\_')
                 bot.edit_message_text(
                     f"⚠️ Не удалось сохранить прошивку роутера\n\n"
-                    f"📦 Пустой архив создан: `{archive_path.replace('_', '\\_')}`\n"
+                    f"📦 Пустой архив создан: `{archive_path_safe}`\n"
                     f"💾 Размер: 0.001 MB\n"
                     f"❌ Причина: ndmc не вернул данные\n\n"
                     f"📝 Попробуйте вручную:\n"
