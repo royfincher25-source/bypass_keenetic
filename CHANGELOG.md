@@ -5,6 +5,15 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.37] - 2026-03-09
+
+### Исправлено
+
+- **Логирование generate_config**
+  - Логирование вызова `parse_func`
+  - Логирование результата `parse_func`
+  - Логирование ошибок `parse_func`
+
 ## [3.5.36] - 2026-03-09
 
 ### Исправлено
