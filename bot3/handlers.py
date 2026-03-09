@@ -1,8 +1,22 @@
 import subprocess
 import os
+import sys
 import time
+import requests
 from telebot import types
 import bot_config as config
+
+# =============================================================================
+# КОНСТАНТЫ
+# =============================================================================
+TELEGRAM_MAX_MESSAGE_LENGTH = 4096  # Лимит Telegram на длину сообщения
+TIMEOUT_SERVICE_STATUS = 2            # Таймаут проверки статуса сервиса (сек)
+TIMEOUT_SERVICE_COMMAND = 30         # Таймаут команды сервиса (сек)
+TIMEOUT_HTTP_REQUEST = 10            # Таймаут HTTP запроса (сек)
+TIMEOUT_UPDATE = 300                  # Таймаут обновления (сек) = 5 мин
+TIMEOUT_INSTALL = 600                 # Таймаут установки (сек) = 10 мин
+TIMEOUT_REMOVE = 300                  # Таймаут удаления (сек) = 5 мин
+
 from menu import (
     get_menu_main, get_menu_bypass_files, get_menu_service, get_menu_keys_bridges,
     get_menu_bypass_list, get_menu_add_bypass, get_menu_remove_bypass,
@@ -12,7 +26,8 @@ from menu import (
 )
 from utils import (
     download_script, download_bot_files, load_bypass_list, save_bypass_list, vless_config, trojan_config,
-    shadowsocks_config, tor_config, get_available_drives, create_backup_with_params, log_error
+    shadowsocks_config, tor_config, get_available_drives, create_backup_with_params, log_error,
+    validate_bypass_entry, get_http_session
 )
 
 class HandlerState:
@@ -34,7 +49,7 @@ def setup_handlers(bot):
             try:
                 bot.delete_message(chat_id, state.last_stats_message_id)
                 state.last_stats_message_id = None
-            except:
+            except Exception:
                 pass  # Игнорируем ошибку если сообщение уже удалено
         
         state.current_menu = new_menu
@@ -53,7 +68,7 @@ def setup_handlers(bot):
     def send_long_message(chat_id, text, parse_mode=None):
         current_part = ""
         for line in text.split('\n'):
-            if len(current_part + '\n' + line) > 4096:
+            if len(current_part + '\n' + line) > TELEGRAM_MAX_MESSAGE_LENGTH:
                 bot.send_message(chat_id, current_part, parse_mode=parse_mode)
                 current_part = line
             else:
@@ -86,7 +101,6 @@ def setup_handlers(bot):
                 item = item.strip()
                 if item and item not in mylist:
                     # Проверяем валидность записи
-                    from utils import validate_bypass_entry
                     if validate_bypass_entry(item):
                         mylist.append(item)
                         added_count += 1
@@ -200,10 +214,8 @@ def setup_handlers(bot):
             return "N/A"
 
     def get_remote_version(bot_url):
-        import requests
         try:
             # Используем сессию из utils для connection pooling
-            from utils import get_http_session
             session = get_http_session()
             # Добавляем заголовки для обхода кеша
             headers = {
@@ -215,7 +227,7 @@ def setup_handlers(bot):
             response = session.get(
                 f"{bot_url}/version.md?t={int(time.time())}",
                 headers=headers,
-                timeout=10
+                timeout=TIMEOUT_HTTP_REQUEST
             )
             return response.text.strip() if response.status_code == 200 else "N/A"
         except requests.exceptions.Timeout:
@@ -229,7 +241,7 @@ def setup_handlers(bot):
             try:
                 bot.delete_message(chat_id, state.last_stats_message_id)
                 state.last_stats_message_id = None
-            except:
+            except Exception:
                 pass
         
         bot_new_version = get_remote_version(config.bot_url)
@@ -319,7 +331,6 @@ def setup_handlers(bot):
                     idle1 = values[3] if len(values) > 3 else 0
                     total1 = sum(values)
             
-            import time
             time.sleep(0.5)  # Ждём 0.5 сек для замера
             
             # Второе чтение
@@ -351,7 +362,7 @@ def setup_handlers(bot):
         try:
             with open('/opt/etc/bot/restart_count.txt', 'r') as f:
                 stats['restart_count'] = int(f.read().strip())
-        except:
+        except (FileNotFoundError, ValueError, IOError):
             stats['restart_count'] = 0
 
         # Проверка сервисов только если явно запрошено (медленная операция)
@@ -367,7 +378,7 @@ def setup_handlers(bot):
             for service_name, init_script, stat_key in services:
                 try:
                     # Таймаут 2 секунды вместо 5 для быстродействия
-                    result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
+                    result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=TIMEOUT_SERVICE_STATUS)
                     status = '✅' if result.returncode == 0 else '❌'
                 except Exception:
                     status = '❓'
@@ -384,7 +395,7 @@ def setup_handlers(bot):
                     # VPN файлы есть — проверяем статус через ndmc (таймаут 2 сек)
                     result = subprocess.run(
                         ['ndmc', '-c', 'show running | include ip-sec|vpn'],
-                        capture_output=True, text=True, timeout=2
+                        capture_output=True, text=True, timeout=TIMEOUT_SERVICE_STATUS
                     )
                     if result.returncode == 0 and result.stdout.strip():
                         stats['vpn_status'] = '✅'
@@ -453,7 +464,7 @@ def setup_handlers(bot):
         if state.last_stats_message_id:
             try:
                 bot.delete_message(chat_id, state.last_stats_message_id)
-            except:
+            except Exception:
                 pass
         
         try:
@@ -520,16 +531,25 @@ def setup_handlers(bot):
         11: handle_trojan,
     }
 
+    def check_authorization(message):
+        """
+        Проверка авторизации пользователя.
+        Использует user_id (безопаснее) с fallback на username.
+        """
+        user_id = message.from_user.id
+        username = getattr(message.from_user, 'username', None)
+        return config.is_authorized(user_id, username)
+
     @bot.message_handler(commands=['start'])
     def start(message):
-        if message.from_user.username not in config.usernames:
+        if not check_authorization(message):
             bot.send_message(message.chat.id, '⚠️ Вы не являетесь автором канала!')
             return
         set_menu_and_reply(message.chat.id, get_menu_main())
 
     @bot.message_handler(commands=['stats'])
     def stats_command(message):
-        if message.from_user.username not in config.usernames:
+        if not check_authorization(message):
             bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
             return
         stats = get_stats()
@@ -538,7 +558,7 @@ def setup_handlers(bot):
     # Обработчики команд управления сервисами
     @bot.message_handler(commands=['tor_on', 'tor_off', 'vless_on', 'vless_off', 'trojan_on', 'trojan_off', 'ss_on', 'ss_off'])
     def service_command(message):
-        if message.from_user.username not in config.usernames:
+        if not check_authorization(message):
             bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
             return
         command = message.text.split()[0]
@@ -570,20 +590,20 @@ def setup_handlers(bot):
             # Выполняем команду
             cmd = [init_script, 'start' if enable else 'stop']
             log_error(f"Running command: {' '.join(cmd)}")
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT_SERVICE_COMMAND)
             log_error(f"Command result: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
             
             # Если не сработало, пробуем restart (для некоторых сервисов)
             if result.returncode != 0 and enable:
                 log_error(f"Start failed for {name}, trying restart: {result.stderr}")
                 cmd = [init_script, 'restart']
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT_SERVICE_COMMAND)
                 log_error(f"Restart result: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
             
             # Проверяем статус после включения (кроме Trojan - у него могут быть проблемы со status)
             if enable and result.returncode == 0 and service_name != 'trojan':
                 time.sleep(2)  # Ждём запуска
-                status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=10)
+                status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=TIMEOUT_SERVICE_STATUS)
                 log_error(f"Status check: returncode={status_result.returncode}, output={status_result.stdout}")
                 if status_result.returncode != 0:
                     log_error(f"{name} started but status check failed")
@@ -593,7 +613,7 @@ def setup_handlers(bot):
             # После выключения проверяем статус (кроме Trojan)
             if not enable and result.returncode == 0 and service_name != 'trojan':
                 time.sleep(1)
-                status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=10)
+                status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=TIMEOUT_SERVICE_STATUS)
                 if status_result.returncode == 0:
                     log_error(f"{name} not stopped, status still shows running")
                     result.returncode = 1  # Помечаем как ошибку
@@ -642,7 +662,7 @@ def setup_handlers(bot):
 
         try:
             cmd = [init_script, 'start' if enable else 'stop']
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT_SERVICE_COMMAND)
 
             if result.returncode == 0:
                 # Получаем статистику без проверки сервисов (быстро)
@@ -650,12 +670,12 @@ def setup_handlers(bot):
 
                 # Проверяем статус только что изменённого сервиса
                 try:
-                    status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=2)
+                    status_result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=TIMEOUT_SERVICE_STATUS)
                     new_status = '✅' if status_result.returncode == 0 else '❌'
                     # Обновляем статус только этого сервиса в кэше и статистике
                     _service_status_cache[stat_key] = new_status
                     stats[stat_key] = new_status
-                except:
+                except Exception:
                     pass  # Оставляем как есть
 
                 bot.edit_message_text(
@@ -677,7 +697,7 @@ def setup_handlers(bot):
     @bot.message_handler(commands=['update'])
     def update_command(message):
         """Команда для ручного запуска обновления бота"""
-        if message.from_user.username not in config.usernames:
+        if not check_authorization(message):
             bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
             return
         
@@ -695,7 +715,7 @@ def setup_handlers(bot):
 
     @bot.message_handler(content_types=['text'])
     def bot_message(message):
-        if message.from_user.username not in config.usernames or message.chat.type != 'private':
+        if not check_authorization(message) or message.chat.type != 'private':
             bot.send_message(message.chat.id, '⚠️ Вы не являетесь автором канала или это не приватный чат!')
             return
 
@@ -801,7 +821,7 @@ def setup_handlers(bot):
         try:
             for line in process.stdout:
                 bot.edit_message_text(f"⏳ {line.strip()}", chat_id, msg.message_id)
-            process.wait(timeout=300)  # 5 минут таймаут
+            process.wait(timeout=TIMEOUT_UPDATE)
         except subprocess.TimeoutExpired:
             process.kill()
             bot.edit_message_text('❌ Превышен таймаут операции (5 минут)', chat_id, msg.message_id)
@@ -816,7 +836,7 @@ def setup_handlers(bot):
         try:
             with open(config.paths["bot_dir"] + "/version.md", "r") as f:
                 current_version = f.read().strip()
-        except:
+        except (FileNotFoundError, IOError):
             current_version = "N/A"
         
         # Отправляем финальное сообщение с версией
@@ -835,7 +855,6 @@ def setup_handlers(bot):
             start_new_session=True
         )
         # Завершаем текущий процесс (корректное завершение с cleanup)
-        import sys
         sys.exit(0)
 
     @bot.callback_query_handler(func=lambda call: call.data == "install")
@@ -848,7 +867,7 @@ def setup_handlers(bot):
         try:
             for line in process.stdout:
                 bot.edit_message_text(f"⏳ {line.strip()}", chat_id, msg.message_id)
-            process.wait(timeout=600)  # 10 минут таймаут для установки
+            process.wait(timeout=TIMEOUT_INSTALL)
         except subprocess.TimeoutExpired:
             process.kill()
             bot.edit_message_text('❌ Превышен таймаут операции (10 минут)', chat_id, msg.message_id)
@@ -869,7 +888,7 @@ def setup_handlers(bot):
         try:
             for line in process.stdout:
                 bot.edit_message_text(f"⏳ {line.strip()}", chat_id, msg.message_id)
-            process.wait(timeout=300)  # 5 минут таймаут для удаления
+            process.wait(timeout=TIMEOUT_REMOVE)
         except subprocess.TimeoutExpired:
             process.kill()
             bot.edit_message_text('❌ Превышен таймаут операции (5 минут)', chat_id, msg.message_id)

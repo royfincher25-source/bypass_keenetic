@@ -12,9 +12,6 @@ import os
 import signal
 import time
 import subprocess
-import json
-import re
-import gc
 
 # Импорт общих функций из core модуля
 from core import (
@@ -39,60 +36,40 @@ import bot_config as config
 # =============================================================================
 
 class Cache:
-    """Кэш с TTL и LRU eviction для экономии памяти"""
+    """Простой кэш с TTL для embedded-устройств"""
 
     _cache = {}
     _timestamps = {}
-    MAX_SIZE = 100  # Ограничение размера кэша
+    MAX_SIZE = 20
 
     @classmethod
     def get(cls, key, default=None):
-        """Получение из кэша с LRU обновлением"""
-        if key in cls._cache:
-            # Поднимаем элемент вверх (LRU)
-            value = cls._cache.pop(key)
-            cls._cache[key] = value
-            return value
-        return default
+        return cls._cache.get(key, default)
 
     @classmethod
     def set(cls, key, value, ttl=300):
-        """Установка в кэш с TTL и LRU eviction"""
-        # LRU eviction при превышении размера
-        if len(cls._cache) >= cls.MAX_SIZE and key not in cls._cache:
-            # Удаляем oldest entry (первый в словаре)
-            oldest_key = next(iter(cls._cache))
-            cls._cache.pop(oldest_key, None)
-            cls._timestamps.pop(oldest_key, None)
-        
+        if len(cls._cache) >= cls.MAX_SIZE:
+            cls._cache.clear()
+            cls._timestamps.clear()
         cls._cache[key] = value
         cls._timestamps[key] = time.time() + ttl
 
     @classmethod
     def is_valid(cls, key):
-        """Проверка валидности кэша"""
         if key not in cls._timestamps:
             return False
         return time.time() < cls._timestamps[key]
 
     @classmethod
     def cleanup(cls):
-        """Очистка просроченного кэша + LRU"""
         now = time.time()
         expired = [k for k, t in cls._timestamps.items() if now >= t]
         for key in expired:
             cls._cache.pop(key, None)
             cls._timestamps.pop(key, None)
-        
-        # Дополнительно: оставляем только MAX_SIZE последних
-        while len(cls._cache) > cls.MAX_SIZE:
-            oldest_key = next(iter(cls._cache))
-            cls._cache.pop(oldest_key, None)
-            cls._timestamps.pop(oldest_key, None)
 
     @classmethod
     def clear(cls):
-        """Полная очистка кэша"""
         cls._cache.clear()
         cls._timestamps.clear()
 
@@ -121,7 +98,7 @@ def log_error(message):
         if _log_file_handle:
             try:
                 _log_file_handle.close()
-            except:
+            except Exception:
                 pass
         _log_file_handle = open(log_file, "a", encoding='utf-8')
         _log_file_path = log_file
@@ -130,7 +107,7 @@ def log_error(message):
     try:
         _log_file_handle.write(f"{timestamp} - {message}\n")
         _log_file_handle.flush()  # Немедленная запись
-    except:
+    except Exception:
         pass
 
 
@@ -173,35 +150,6 @@ def signal_handler(sig, frame):
 # ЗАГРУЗКА СКРИПТОВ (ОПТИМИЗИРОВАНО)
 # =============================================================================
 
-# Connection pooling для HTTP запросов (экономия памяти и времени)
-_http_session = None
-
-
-def get_http_session():
-    """Получение HTTP сессии с connection pooling"""
-    global _http_session
-    if _http_session is None:
-        import requests
-        from requests.adapters import HTTPAdapter
-        from urllib3.util.retry import Retry
-        
-        _http_session = requests.Session()
-        
-        # Настройка retry logic
-        retry = Retry(
-            total=3,
-            backoff_factor=2,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET", "POST"]
-        )
-        adapter = HTTPAdapter(max_retries=retry, pool_connections=1, pool_maxsize=2)
-        _http_session.mount("http://", adapter)
-        _http_session.mount("https://", adapter)
-    
-    return _http_session
-
-
-def download_script():
     """
     Загрузка скрипта с кэшированием и connection pooling.
     - Проверка версии перед загрузкой
@@ -265,38 +213,25 @@ def download_bot_files():
 
 
 # =============================================================================
-# ВАЛИДАЦИЯ ДАННЫХ
+# ВАЛИДАЦИЯ ДАННЫХ (ОПТИМИЗИРОВАНО)
 # =============================================================================
 
-# Паттерны для валидации доменов и IP
-DOMAIN_PATTERN = re.compile(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$')
-IP_PATTERN = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')
-IPV6_PATTERN = re.compile(r'^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$')
-COMMENT_PATTERN = re.compile(r'^#')
-
-
 def validate_bypass_entry(entry):
-    """
-    Проверка записи списка обхода.
-    Возвращает True если запись валидна (домен, IP, IPv6 или комментарий)
-    """
+    """Упрощённая проверка записи списка обхода."""
     entry = entry.strip()
     if not entry:
         return False
-    # Комментарии разрешены
-    if COMMENT_PATTERN.match(entry):
+    if entry.startswith('#'):
         return True
-    # Проверка домена
-    if DOMAIN_PATTERN.match(entry):
+    if '.' in entry and len(entry) < 253:
+        parts = entry.split('.')
+        if len(parts) == 4:
+            try:
+                return all(0 <= int(p) <= 255 for p in parts)
+            except ValueError:
+                pass
         return True
-    # Проверка IPv4
-    if IP_PATTERN.match(entry):
-        # Дополнительная проверка диапазонов октетов
-        octets = entry.split('.')
-        if all(0 <= int(octet) <= 255 for octet in octets):
-            return True
-    # Проверка IPv6
-    if IPV6_PATTERN.match(entry):
+    if ':' in entry:
         return True
     return False
 
@@ -323,7 +258,7 @@ def load_bypass_list(filepath):
             mtime = os.path.getmtime(filepath)
             if cached and mtime == cached.get('mtime'):
                 return cached['data']
-        except:
+        except (OSError, IOError):
             pass
 
     # Загрузка из файла
@@ -338,13 +273,13 @@ def load_bypass_list(filepath):
         # Кэширование
         try:
             mtime = os.path.getmtime(filepath)
-        except:
+        except (OSError, IOError):
             mtime = time.time()
 
         Cache.set(cache_key, {'data': data, 'mtime': mtime}, ttl=60)
 
         return data
-    except:
+    except Exception:
         return []
 
 
@@ -377,7 +312,7 @@ def save_bypass_list(filepath, sites):
         try:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-        except:
+        except (OSError, IOError):
             pass
         raise
 
@@ -402,7 +337,7 @@ def check_restart(bot):
             log_error(f"Ошибка при очистке chat_id_path: {str(e)}")
             try:
                 os.remove(chat_id_path)
-            except:
+            except (OSError, IOError):
                 pass
 
 
@@ -562,10 +497,11 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
 
 class ConfigWriter:
     """Оптимизированная запись конфигов"""
-    
+
     @staticmethod
     def write_config(file_path, config_data, format='json'):
         """Запись конфигурации"""
+        import json
         with open(file_path, 'w', encoding='utf-8') as f:
             if format == 'json':
                 json.dump(json.loads(config_data), f, ensure_ascii=False, indent=2)
@@ -640,6 +576,8 @@ def shadowsocks_config(key, bot=None, chat_id=None):
 @notify_on_error()
 def tor_config(bridges, bot=None, chat_id=None):
     """Генерация Tor конфигурации"""
+    import re
+    
     # Упрощённый парсинг мостов
     bridge_lines = bridges.strip().split('\n')
     valid_transports = {"obfs4", "webtunnel"}
@@ -751,6 +689,7 @@ def get_available_drives():
 
 def cleanup_memory():
     """Принудительная очистка памяти (вызывать периодически)"""
+    import gc
     Cache.cleanup()
     gc.collect()
 
@@ -788,10 +727,3 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
     except Exception as e:
         bot.edit_message_text(f"❌ Ошибка: {str(e)}", chat_id, progress_msg_id)
         log_error(f"Backup error: {e}")
-
-
-def cleanup_memory():
-    """Периодическая очистка памяти"""
-    import gc
-    Cache.cleanup()
-    gc.collect()

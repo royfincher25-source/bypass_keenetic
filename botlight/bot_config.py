@@ -1,41 +1,42 @@
 # =============================================================================
 # КОНФИГУРАЦИЯ БОТА (botlight - облегчённая версия)
 # =============================================================================
-# Этот файл загружает настройки из переменных окружения (.env файла)
-# Убедитесь, что вы скопировали .env.example в .env и заполнили значения
+# Использует core.config для консистентности с bot3
 # =============================================================================
 
+import sys
 import os
+
+bot_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(bot_dir, '..', 'core'))
+
+from core.config import config
 from dotenv import load_dotenv
 
-# Загружаем переменные из .env файла
-load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+load_dotenv(os.path.join(bot_dir, '.env'))
 
 # -----------------------------------------------------------------------------
 # TELEGRAM BOT SETTINGS
 # -----------------------------------------------------------------------------
-token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
-usernames = os.environ.get('TELEGRAM_USERNAMES', '').split(',')
+token = config.token
+usernames = config.usernames
+user_ids = config.user_ids
 
-# Валидация токена
-if not token or token.strip() == '' or ':' not in token or len(token) < 10:
-    print("❌ ОШИБКА: TELEGRAM_BOT_TOKEN не указан или имеет неверный формат в .env файле")
-    print("   Скопируйте .env.example в .env и заполните TELEGRAM_BOT_TOKEN")
-    raise ValueError("TELEGRAM_BOT_TOKEN не настроен")
-
-# Валидация usernames
-if not usernames or usernames == ['']:
-    print("⚠️ ПРЕДУПРЕЖДЕНИЕ: TELEGRAM_USERNAMES не указан в .env файле")
-    usernames = []
+# Валидация при старте (fail fast)
+if not config.is_valid:
+    valid, error = config.validate()
+    print(f"❌ ОШИБКА: {error}")
+    print("   Проверьте .env файл в директории бота")
+    sys.exit(1)
 
 # -----------------------------------------------------------------------------
-# BOT SETTINGS
+# BOT SETTINGS (используем core.config)
 # -----------------------------------------------------------------------------
-MAX_RESTARTS = int(os.environ.get('MAX_RESTARTS', '5'))
-RESTART_DELAY = int(os.environ.get('RESTART_DELAY', '60'))
+MAX_RESTARTS = config.max_restarts
+RESTART_DELAY = config.restart_delay
 
 # -----------------------------------------------------------------------------
-# PROXY SETTINGS
+# PROXY SETTINGS (botlight-specific)
 # -----------------------------------------------------------------------------
 proxy0port = int(os.environ.get('PROXY0_PORT', '9050'))
 proxy0interface = os.environ.get('PROXY0_INTERFACE', 'Proxy0')
@@ -45,7 +46,7 @@ proxy2port = int(os.environ.get('PROXY2_PORT', '2080'))
 proxy2interface = os.environ.get('PROXY2_INTERFACE', 'Proxy2')
 
 # -----------------------------------------------------------------------------
-# VLESS CLIENT SETTINGS
+# VLESS CLIENT SETTINGS (botlight-specific)
 # -----------------------------------------------------------------------------
 vless_client = os.environ.get('VLESS_CLIENT', 'singbox')
 client_mode = os.environ.get('CLIENT_MODE', 'socks5')
@@ -114,7 +115,7 @@ MT_url = os.environ.get('MT_URL', 'http://bin.magitrickle.dev/packages/add_repo.
 # -----------------------------------------------------------------------------
 backup_settings = {
     "LOG_FILE": paths["keensnap_log"],
-    "MAX_SIZE_MB": int(os.environ.get('BACKUP_MAX_SIZE_MB', '45')),
+    "MAX_SIZE_MB": config.backup_max_size_mb,
     "CUSTOM_BACKUP_PATHS": " ".join([
         paths["bot_dir"],
         paths["singbox_config"],

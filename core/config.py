@@ -45,7 +45,9 @@ class Config:
         # Кэширование всех значений при старте (быстрый доступ)
         self._token = get_env('TELEGRAM_BOT_TOKEN', '')
         self._usernames_str = get_env('TELEGRAM_USERNAMES', '')
+        self._user_ids_str = get_env('TELEGRAM_USER_IDS', '')
         self._usernames = None  # Lazy loading
+        self._user_ids = None   # Lazy loading
         
         # Числовые значения кэшируются сразу
         self.max_restarts = get_env_int('MAX_RESTARTS', 5)
@@ -84,6 +86,41 @@ class Config:
                 self._usernames = []
         return self._usernames
     
+    @property
+    def user_ids(self):
+        """
+        Lazy loading user_ids.
+        user_id более безопасен чем username (нельзя подделать/изменить).
+        """
+        if self._user_ids is None:
+            if self._user_ids_str:
+                try:
+                    self._user_ids = [
+                        int(uid.strip()) for uid in self._user_ids_str.split(',')
+                        if uid.strip()
+                    ]
+                except ValueError:
+                    self._user_ids = []
+            else:
+                self._user_ids = []
+        return self._user_ids
+    
+    def is_authorized(self, user_id, username):
+        """
+        Проверка авторизации пользователя.
+        
+        Приоритет: user_id (безопаснее) > username (для совместимости)
+        """
+        if user_id and self.user_ids:
+            if user_id in self.user_ids:
+                return True
+        
+        if username and self.usernames:
+            if username in self.usernames:
+                return True
+        
+        return False
+    
     def validate(self):
         """
         Быстрая валидация конфигурации.
@@ -107,6 +144,7 @@ class Config:
         return {
             'token': self._token,
             'usernames': self.usernames,
+            'user_ids': self.user_ids,
             'max_restarts': self.max_restarts,
             'restart_delay': self.restart_delay,
             'router_ip': self.router_ip,
@@ -124,6 +162,7 @@ class Config:
         """Перезагрузка конфигурации (редко используется)"""
         Config._initialized = False
         self._usernames = None
+        self._user_ids = None
         env.clear_cache()
         self.__init__(env_path)
 

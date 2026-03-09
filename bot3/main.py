@@ -38,7 +38,7 @@ def save_restart_count(count):
     try:
         with open('/opt/etc/bot/restart_count.txt', 'w') as f:
             f.write(str(count))
-    except:
+    except (IOError, OSError):
         pass
 
 if __name__ == "__main__":

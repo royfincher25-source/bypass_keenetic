@@ -1,15 +1,23 @@
 import subprocess
 import os
 import time
+import requests
 from telebot import types
 import bot_config as config
+from core.handlers_shared import (
+    get_local_version as _get_local_version,
+    get_remote_version as _get_remote_version,
+    get_system_stats,
+    format_stats_basic
+)
 from menu import (
     MENU_MAIN, MENU_SERVICE, MENU_KEYS_BRIDGES, MENU_TOR, MENU_VLESS,
     create_backup_menu, BackupState, create_drive_selection_menu, create_delete_archive_menu,
     create_updates_menu, create_install_remove_menu
 )
 from utils import (
-    download_script, download_bot_files, vless_config, tor_config, get_available_drives, create_backup_with_params, log_error
+    download_script, download_bot_files, vless_config, tor_config, get_available_drives, 
+    create_backup_with_params, log_error, get_http_session
 )
 
 class BotState:
@@ -78,105 +86,18 @@ def setup_handlers(bot):
         bot.send_message(chat_id, "Выберите действие:", reply_markup=inline_keyboard)
 
     def get_local_version():
-        version_file = os.path.join(os.path.dirname(__file__), "version.md")
-        try:
-            with open(version_file, "r", encoding="utf-8") as f:
-                return f.read().strip()
-        except FileNotFoundError:
-            return "N/A"
+        return _get_local_version(os.path.dirname(__file__))
 
     def get_remote_version(bot_url):
-        import requests
-        try:
-            # Используем сессию из utils для connection pooling
-            from utils import get_http_session
-            session = get_http_session()
-            response = session.get(f"{bot_url}/version.md", timeout=10)
-            return response.text.strip() if response.status_code == 200 else "N/A"
-        except requests.exceptions.Timeout:
-            return "N/A (timeout)"
-        except requests.exceptions.RequestException:
-            return "N/A (error)"
-
-    def handle_updates(chat_id):
-        bot_new_version = get_remote_version(config.bot_url)
-        bot_version = get_local_version()        
-        service_update_info = f"Установленная версия: {bot_version}\nДоступная на git версия: {bot_new_version}"
-        need_update = True  # Всегда показывать кнопку обновления
-        if bot_version != "N/A" and bot_new_version != "N/A":
-            try:
-                if tuple(map(int, bot_version.split("."))) >= tuple(map(int, bot_new_version.split("."))):
-                    need_update = False  # Скрыть если версия актуальна
-                    service_update_info += "\n✅ У вас последняя версия!"
-            except ValueError:
-                service_update_info += "\nОшибка: версии имеют неверный формат"
-        else:
-            service_update_info += "\nНе удалось проверить обновления"
-        inline_keyboard = create_updates_menu(need_update)
-        bot.send_message(chat_id, service_update_info, reply_markup=inline_keyboard)
+        return _get_remote_version(bot_url, get_http_session)
 
     def get_stats():
-        stats = {
-            'bot_ram_mb': 0,
-            'system_ram_total_mb': 0,
-            'system_ram_free_mb': 0,
-            'bot_uptime': 'N/A',
-            'restart_count': 0,
-            'tor_status': 'N/A',
-            'vless_status': 'N/A'
-        }
-        
-        bot_pid = os.getpid()
-        
-        try:
-            with open(f'/proc/{bot_pid}/status', 'r') as f:
-                for line in f:
-                    if line.startswith('VmRSS:'):
-                        stats['bot_ram_mb'] = int(line.split()[1]) / 1024
-                        break
-        except Exception:
-            pass
-        
-        try:
-            meminfo = subprocess.check_output(['cat', '/proc/meminfo'], text=True)
-            for line in meminfo.splitlines():
-                if line.startswith('MemTotal:'):
-                    stats['system_ram_total_mb'] = int(line.split()[1]) / 1024
-                elif line.startswith('MemAvailable:'):
-                    stats['system_ram_free_mb'] = int(line.split()[1]) / 1024
-                    break
-        except Exception:
-            pass
-        
-        try:
-            uptime_seconds = float(subprocess.check_output(['cat', '/proc/uptime'], text=True).split()[0])
-            hours = int(uptime_seconds // 3600)
-            minutes = int((uptime_seconds % 3600) // 60)
-            stats['bot_uptime'] = f"{hours}ч {minutes}мин"
-        except Exception:
-            pass
-        
-        stats['restart_count'] = config.MAX_RESTARTS
-        
-        for service_name, init_script in [('Tor', config.services["tor_restart"][0]), ('VLESS', vless_restart[0])]:
-            try:
-                result = subprocess.run([init_script, 'status'], capture_output=True, text=True, timeout=5)
-                status = '✅' if result.returncode == 0 else '❌'
-            except Exception:
-                status = '❓'
-            
-            if service_name == 'Tor':
-                stats['tor_status'] = status
-            else:
-                stats['vless_status'] = status
-        
+        service_list = [
+            ('Tor', config.services["tor_restart"][0], 'tor_status'),
+            ('VLESS', vless_restart[0], 'vless_status'),
+        ]
+        stats = get_system_stats(service_list=service_list)
         return stats
-
-    def create_stats_keyboard():
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("🔄 Обновить", callback_data="stats_refresh"))
-        markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="menu_main"))
-        return markup
 
     def format_stats_message(stats):
         return (
@@ -186,9 +107,15 @@ def setup_handlers(bot):
             f"💻 Система: {stats['system_ram_free_mb']:.0f}/{stats['system_ram_total_mb']:.0f} MB свободно\n"
             f"⏱️ Uptime: {stats['bot_uptime']}\n"
             f"🔄 Перезапусков: {stats['restart_count']}\n\n"
-            f"🔵 Tor: {stats['tor_status']}\n"
-            f"🔷 VLESS: {stats['vless_status']}"
+            f"🔵 Tor: {stats.get('tor_status', '❓')}\n"
+            f"🔷 VLESS: {stats.get('vless_status', '❓')}"
         )
+
+    def create_stats_keyboard():
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🔄 Обновить", callback_data="stats_refresh"))
+        markup.add(types.InlineKeyboardButton("🔙 Назад", callback_data="menu_main"))
+        return markup
 
     def handle_stats(chat_id):
         stats = get_stats()
@@ -227,16 +154,22 @@ def setup_handlers(bot):
         3: handle_vless
     }
 
+    def check_authorization(message):
+        """Проверка авторизации: user_id (приоритет) или username"""
+        user_id = message.from_user.id
+        username = getattr(message.from_user, 'username', None)
+        return config.is_authorized(user_id, username)
+
     @bot.message_handler(commands=['start'])
     def start(message):
-        if message.from_user.username not in config.usernames:
+        if not check_authorization(message):
             bot.send_message(message.chat.id, '⚠️ Вы не являетесь автором канала!')
             return
         set_menu_and_reply(message.chat.id, MENU_MAIN)
 
     @bot.message_handler(commands=['stats'])
     def stats_command(message):
-        if message.from_user.username not in config.usernames:
+        if not check_authorization(message):
             bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
             return
         stats = get_stats()
@@ -244,7 +177,7 @@ def setup_handlers(bot):
 
     @bot.message_handler(content_types=['text'])
     def bot_message(message):
-        if message.from_user.username not in config.usernames or message.chat.type != 'private':
+        if not check_authorization(message) or message.chat.type != 'private':
             bot.send_message(message.chat.id, '⚠️ Вы не являетесь автором канала или это не приватный чат!')
             return
 

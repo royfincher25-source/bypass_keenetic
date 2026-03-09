@@ -39,7 +39,7 @@ def get_http_session():
         adapter = HTTPAdapter(
             max_retries=retry,
             pool_connections=1,
-            pool_maxsize=5
+            pool_maxsize=2
         )
         _http_session.mount("http://", adapter)
         _http_session.mount("https://", adapter)
