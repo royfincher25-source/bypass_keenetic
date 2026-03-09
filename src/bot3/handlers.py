@@ -705,7 +705,7 @@ def setup_handlers(bot):
         if not check_authorization(message):
             bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
             return
-        
+
         # Отправляем сообщение и передаём его message_id в handle_update
         msg = bot.send_message(message.chat.id, '⏳ Запуск обновления...')
         # Эмулируем нажатие кнопки обновления с правильным message_id
@@ -717,6 +717,15 @@ def setup_handlers(bot):
         # Создаем фейковый message_id для редактирования
         call.message.message_id = msg.message_id
         handle_update(call)
+
+    @bot.message_handler(commands=['restart'])
+    def restart_command(message):
+        """Команда для перезапуска бота"""
+        if not check_authorization(message):
+            bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
+            return
+
+        handle_restart(message.chat.id)
 
     @bot.message_handler(content_types=['text'])
     def bot_message(message):
