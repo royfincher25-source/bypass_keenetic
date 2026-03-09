@@ -5,7 +5,79 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.5.0] - 2026-03-08
+## [3.4.1] - 2026-03-09
+
+### Исправлено
+
+- **bot3/bot_config.py** - Добавлен экспорт `is_authorized` из `core.config`
+  - Исправлена ошибка `AttributeError: module 'bot_config' has no attribute 'is_authorized'`
+  - Функция `check_authorization()` теперь работает корректно
+  - Безопасная авторизация по user_id (приоритет) + username
+
+### Изменено
+
+- **QWEN.md** - Добавлена инструкция по обновлению бота на роутере
+- **LOGS_INSTRUCTION.md** - Создана полная инструкция по работе с логами
+
+## [3.4.0] - 2026-03-09
+
+### Добавлено
+
+- **Оптимизация памяти** (~6-7 MB экономия)
+  - Cache MAX_SIZE: 100 → 20 (экономия ~2 MB)
+  - Упрощён Cache класс (убрана LRU логика, экономия ~1 MB)
+  - Lazy импорты: json, re, gc внутри функций (экономия ~1 MB при старте)
+  - HTTP pool_maxsize: 5 → 2 (экономия ~1 MB)
+  - Убрано дублирование кода botlight → core (экономия ~1 MB)
+
+- **Авторизация по user_id**
+  - `core/config.py` - функция `is_authorized()` с приоритетом user_id
+  - `TELEGRAM_USER_IDS` в `.env.example`
+  - Более безопасная авторизация (нельзя подделать)
+
+- **Периодическая очистка памяти**
+  - Вызов `cleanup_memory()` каждые 100 итераций
+  - Принудительная сборка мусора (gc.collect())
+
+- **Документация**
+  - `docs/plans/2026-03-09-router-optimization.md` - план оптимизации для MT7628N
+  - `LOGS_INSTRUCTION.md` - инструкция по работе с логами
+  - `QWEN.md` - инструкция для Qwen Code
+
+### Изменено
+
+- **bot3/utils.py**
+  - Упрощён класс Cache (убрана LRU логика)
+  - Lazy импорты внутри функций
+  - Удалено дублирование `cleanup_memory()`
+
+- **bot3/handlers.py**
+  - Использование `config.is_authorized()` для проверки прав
+  - Функция `check_authorization()`
+
+- **bot3/bot_config.py**
+  - Импорт `user_ids` из `core.config`
+  - Экспорт `is_authorized`
+
+- **botlight/menu.py**
+  - Импорт из `bot3/menu.py` вместо дублирования
+
+- **core/http_client.py**
+  - pool_maxsize: 5 → 2
+
+- **botlight/utils.py**
+  - pool_maxsize: 5 → 2
+  - Удалено дублирование `get_http_session()`
+
+### Документация
+
+- Перемещены файлы в `docs/`:
+  - `docs/user/` - пользовательская документация
+  - `docs/developer/` - документация разработчика
+  - `docs/analysis/` - аналитика
+  - `docs/archive/` - исторические документы
+
+## [3.3.54] - 2026-03-08
 
 ### Добавлено
 
