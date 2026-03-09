@@ -659,10 +659,16 @@ class ConfigWriter:
 
 def generate_config(key, template_file, config_path, replacements, parse_func, bot=None, chat_id=None):
     """Генерация конфигурации с кэшированием шаблонов"""
-    params = parse_func(key, bot, chat_id)
-    
+    try:
+        log_error(f"generate_config: вызов parse_func={parse_func.__name__}, key={key[:50]}...")
+        params = parse_func(key, bot, chat_id)
+        log_error(f"generate_config: parse_func вернул {params}")
+    except Exception as e:
+        log_error(f"generate_config: parse_func ошибка: {e}")
+        raise
+
     cache_key = f'template:{template_file}'
-    
+
     # Проверка кэша шаблона
     if Cache.is_valid(cache_key):
         template = Cache.get(cache_key)
@@ -671,14 +677,14 @@ def generate_config(key, template_file, config_path, replacements, parse_func, b
         with open(template_path, 'r', encoding='utf-8') as f:
             template = f.read()
         Cache.set(cache_key, template, ttl=3600)
-    
+
     # Замена параметров
     config_data = template
     for k, v in replacements.items():
         config_data = config_data.replace("{{" + k + "}}", str(v))
     for k, v in params.items():
         config_data = config_data.replace("{{" + k + "}}", str(v))
-    
+
     ConfigWriter.write_config(config_path, config_data)
 
 
