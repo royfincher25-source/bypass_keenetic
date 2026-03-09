@@ -850,7 +850,7 @@ def setup_handlers(bot):
             f'✅ Бот перезапущен\n\n📦 Версия: {current_version}\n🧠 RAM: ~22-26 MB',
             reply_markup=get_menu_main().markup
         )
-        
+
         # Запускаем новый процесс бота в фоне
         subprocess.Popen(
             ['python3', config.paths["bot_path"]],
@@ -859,8 +859,10 @@ def setup_handlers(bot):
             close_fds=True,
             start_new_session=True
         )
-        # Завершаем текущий процесс (корректное завершение с cleanup)
-        sys.exit(0)
+        
+        # Завершаем старый процесс через 2 секунды (даём время на запуск нового)
+        time.sleep(2)
+        os._exit(0)  # Немедленное завершение без очистки
 
     @bot.callback_query_handler(func=lambda call: call.data == "install")
     def handle_install_callback(call):
