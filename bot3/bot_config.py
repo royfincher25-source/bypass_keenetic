@@ -22,6 +22,9 @@ token = config.token
 usernames = config.usernames
 user_ids = config.user_ids  # Безопасная авторизация по user_id
 
+# Экспорт функции авторизации из core.config
+is_authorized = config.is_authorized
+
 # Валидация при старте (fail fast)
 if not config.is_valid:
     valid, error = config.validate()
