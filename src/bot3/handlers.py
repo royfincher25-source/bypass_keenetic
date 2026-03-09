@@ -230,16 +230,24 @@ def setup_handlers(bot):
             if bot_url is None:
                 bot_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3"
             # Добавляем timestamp для уникальности URL
+            url = f"{bot_url}/version.md?t={int(time.time())}"
+            log_error(f"🌐 Запрос версии: {url}")
             response = session.get(
-                f"{bot_url}/version.md?t={int(time.time())}",
+                url,
                 headers=headers,
                 timeout=TIMEOUT_HTTP_REQUEST
             )
+            log_error(f"🌐 Ответ: status={response.status_code}, text={response.text.strip()}")
             return response.text.strip() if response.status_code == 200 else "N/A"
-        except requests.exceptions.Timeout:
+        except requests.exceptions.Timeout as e:
+            log_error(f"⚠️ Timeout при получении версии: {e}")
             return "N/A (timeout)"
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as e:
+            log_error(f"⚠️ Ошибка при получении версии: {e}")
             return "N/A (error)"
+        except Exception as e:
+            log_error(f"⚠️ Неожиданная ошибка при получении версии: {e}")
+            return "N/A (unknown)"
 
     def handle_updates(chat_id):
         # Закрываем предыдущее окно статистики если открыто
@@ -253,6 +261,10 @@ def setup_handlers(bot):
         # Получаем версию с жёстко закодированным URL (не зависит от config.bot_url)
         bot_new_version = get_remote_version()
         bot_version = get_local_version()
+        
+        # ✅ Логируем версии для диагностики
+        log_error(f"📊 handle_updates: local={bot_version}, remote={bot_new_version}")
+        
         service_update_info = f"Установленная версия: {bot_version}\nДоступная версия: {bot_new_version}"
         
         # Всегда показываем кнопку обновления
