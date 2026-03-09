@@ -914,26 +914,30 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             if file_size_mb < 0.5:
                 log_error(f"Warning: Backup size too small: {file_size_mb} MB, files: {files_added}")
 
+            # Экранируем подчёркивания для Markdown
+            files_added_escaped = [f.replace('_', '\\_') for f in files_added]
+            archive_path_escaped = archive_path.replace('_', '\\_')
+
             # Не отправляем файл (превышает лимит Telegram 50 MB)
             # Показываем информацию и инструкцию по скачиванию
             bot.edit_message_text(
-                f"✅ Бэкап успешно создан!\n\n"
-                f"📦 Архив: `{archive_path}`\n"
+                f"✅ Бэкап успешно создан\\!\n\n"
+                f"📦 Архив: `{archive_path_escaped}`\n"
                 f"💾 Размер: {file_size_mb} MB\n"
-                f"📁 Файлы: {', '.join(files_added)}\n"
-                f"⏱️ Время: {time.strftime('%H:%M:%S')}\n\n"
-                f"📥 **Как скачать:**\n\n"
-                f"**1. Через Telegram Desktop:**\n"
-                f"   Файл слишком большой для отправки\n\n"
-                f"**2. Через SSH (рекомендуется):**\n"
+                f"📁 Файлы: {', '.join(files_added_escaped)}\n"
+                f"⏱️ Время: {time.strftime('%H:%M:%S')}\\n\n"
+                f"📥 **Как скачать:**\\n\n"
+                f"**1\\. Через Telegram Desktop:**\\n"
+                f"   Файл слишком большой для отправки\\n\n"
+                f"**2\\. Через SSH \\(рекомендуется\\):**\\n"
                 f"   ```bash\n"
-                f"   scp root@192.168.1.1:{archive_path} ~/Downloads/\n"
-                f"   ```\n\n"
-                f"**3. Через WinSCP/FileZilla:**\n"
-                f"   - Хост: `192.168.1.1`\n"
-                f"   - Пользователь: `root`\n"
-                f"   - Пароль: `ваш пароль`\n"
-                f"   - Путь: `{archive_path}`",
+                f"   scp root@192\\.168\\.1\\.1:{archive_path_escaped} ~/Downloads/\n"
+                f"   ```\\n\n"
+                f"**3\\. Через WinSCP/FileZilla:**\\n"
+                f"   \\- Хост: `192\\.168\\.1\\.1`\\n"
+                f"   \\- Пользователь: `root`\\n"
+                f"   \\- Пароль: `ваш пароль`\\n"
+                f"   \\- Путь: `{archive_path_escaped}`",
                 chat_id, progress_msg_id,
                 parse_mode='Markdown'
             )
