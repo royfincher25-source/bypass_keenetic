@@ -815,6 +815,17 @@ def setup_handlers(bot):
             bot.edit_message_text('⏳ Файлы бота обновлены. Загрузка скрипта...', chat_id, msg.message_id)
             download_script(config.bot_url + "/script.sh", config.paths["script_sh"])
             bot.edit_message_text('⏳ Скрипт обновлён. Выполняю установку...', chat_id, msg.message_id)
+            
+            # Очищаем кэш Python после обновления файлов
+            import shutil
+            cache_dir = config.paths["bot_dir"] + "/__pycache__"
+            core_cache_dir = config.paths["bot_dir"] + "/core/__pycache__"
+            if os.path.exists(cache_dir):
+                shutil.rmtree(cache_dir)
+                log_error(f"Cleared cache: {cache_dir}")
+            if os.path.exists(core_cache_dir):
+                shutil.rmtree(core_cache_dir)
+                log_error(f"Cleared cache: {core_cache_dir}")
         except Exception as e:
             bot.edit_message_text(f'❌ Ошибка загрузки: {str(e)}', chat_id, msg.message_id)
             log_error(f"Error downloading updates: {str(e)}")
