@@ -210,6 +210,19 @@ def download_bot_files():
         except Exception as e:
             log_error(f"Ошибка при загрузке {filename}: {str(e)}")
             raise
+    
+    # Загрузка обновлённого keensnap.sh
+    try:
+        keensnap_url = f"{config.base_url}/deploy/backup/keensnap/keensnap.sh"
+        keensnap_path = config.paths.get("script_bu", "/opt/root/KeenSnap/keensnap.sh")
+        # Создаём директорию если не существует
+        keensnap_dir = os.path.dirname(keensnap_path)
+        if not os.path.exists(keensnap_dir):
+            os.makedirs(keensnap_dir, exist_ok=True)
+        download_script(keensnap_url, keensnap_path)
+    except Exception as e:
+        log_error(f"Ошибка при загрузке keensnap.sh: {str(e)}")
+        # Не прерываем обновление, т.к. keensnap.sh опционален
 
 
 # =============================================================================
