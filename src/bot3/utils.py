@@ -880,7 +880,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 # Файл не найден — пробуем через ndmc (рабочий синтаксис из KeenSnap)
                 try:
                     # Рабочий синтаксис: copy startup-config <destination>
-                    # destination должен быть с указанием ФС: usb:/ или sys:/
+                    # destination должен быть UUID:/path (без usb: prefix!)
                     # Получаем UUID диска для записи
                     import uuid
                     disk_uuid = selected_drive.get('uuid', '')
@@ -888,7 +888,8 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     if not disk_uuid:
                         disk_uuid = str(uuid.uuid4())
                         log_error(f"Using generated UUID: {disk_uuid}")
-                    destination = f"usb:/{disk_uuid}/backup_startup_config.txt"
+                    # Формируем путь: UUID/path/file (без usb: prefix)
+                    destination = f"{disk_uuid}/backup_startup_config.txt"
                     log_error(f"ndmc destination: {destination}")
                     result = subprocess.run(
                         ["ndmc", "-c", f"copy startup-config {destination}"],
@@ -896,7 +897,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     )
                     log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                     if result.returncode == 0:
-                        # Копируем с usb:/ в /tmp для доступа
+                        # Копируем с /tmp/mnt/{uuid} для доступа
                         src_path = f"/tmp/mnt/{disk_uuid}/backup_startup_config.txt"
                         if os.path.exists(src_path):
                             files_to_backup.append(src_path)
@@ -915,7 +916,8 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 disk_uuid = selected_drive.get('uuid', '')
                 if not disk_uuid:
                     disk_uuid = str(uuid.uuid4())
-                destination = f"usb:/{disk_uuid}/backup_firmware.bin"
+                # Формируем путь: UUID/path/file (без usb: prefix)
+                destination = f"{disk_uuid}/backup_firmware.bin"
                 log_error(f"ndmc firmware destination: {destination}")
                 result = subprocess.run(
                     ["ndmc", "-c", f"copy flash:/firmware {destination}"],
@@ -923,7 +925,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 )
                 log_error(f"ndmc copy flash:/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                 if result.returncode == 0:
-                    # Копируем с usb:/ в /tmp для доступа
+                    # Копируем с /tmp/mnt/{uuid} для доступа
                     src_path = f"/tmp/mnt/{disk_uuid}/backup_firmware.bin"
                     if os.path.exists(src_path):
                         files_to_backup.append(src_path)
