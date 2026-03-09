@@ -845,7 +845,7 @@ def setup_handlers(bot):
         # Отправляем финальное сообщение с версией
         bot.send_message(
             chat_id,
-            f'✅ Бот перезапущен\n\n📦 Версия: {current_version}\n💾 RAM: ~22-26 MB',
+            f'✅ Бот перезапущен\n\n📦 Версия: {current_version}\n🧠 RAM: ~22-26 MB',
             reply_markup=get_menu_main().markup
         )
         
