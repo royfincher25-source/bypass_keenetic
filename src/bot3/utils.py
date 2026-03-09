@@ -906,7 +906,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 try:
                     # Рабочий синтаксис: copy startup-config <destination>
                     # destination должен быть ПОЛНЫМ путём с именем файла!
-                    # KeenSnap создаёт: UUID/backupYYYY-MM-DD_HH-MM/DEVICE_ID_FW_VERSION_startup-config.txt
+                    # KeenSnap использует: UUID:/папка/файл.txt (через : после UUID)
                     timestamp = time.strftime("%Y-%m-%d_%H-%M")
                     disk_uuid = selected_drive.get('uuid', '')
                     log_error(f"Selected drive: {selected_drive}, disk_uuid: {disk_uuid}")
@@ -915,8 +915,8 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                         disk_uuid = str(uuid.uuid4())
                         log_error(f"Using generated UUID: {disk_uuid}")
                     # Формируем ПОЛНЫЙ путь с именем файла (как в KeenSnap)
-                    # Используем простое имя файла без DEVICE_ID
-                    destination = f"{disk_uuid}/backup{timestamp}/startup-config.txt"
+                    # Используем UUID:/папка/файл (через двоеточие!)
+                    destination = f"{disk_uuid}:/backup{timestamp}/startup-config.txt"
                     log_error(f"ndmc destination: {destination}")
                     result = subprocess.run(
                         ["ndmc", "-c", f"copy startup-config {destination}"],
@@ -946,7 +946,8 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     import uuid
                     disk_uuid = str(uuid.uuid4())
                 # Формируем ПОЛНЫЙ путь с именем файла (как в KeenSnap)
-                destination = f"{disk_uuid}/backup{timestamp}/firmware.bin"
+                # Используем UUID:/папка/файл (через двоеточие!)
+                destination = f"{disk_uuid}:/backup{timestamp}/firmware.bin"
                 log_error(f"ndmc firmware destination: {destination}")
                 result = subprocess.run(
                     ["ndmc", "-c", f"copy flash:/firmware {destination}"],
