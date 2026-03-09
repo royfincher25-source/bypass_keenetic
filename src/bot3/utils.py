@@ -197,15 +197,15 @@ def download_bot_files():
     """Загрузка всех файлов бота с обновлением version.md"""
     bot_dir = os.path.dirname(__file__)
     core_dir = os.path.join(bot_dir, 'core')
-    
+
     # Основные файлы бота
     bot_files = [
         # Основные файлы
-        'handlers.py', 'menu.py', 'utils.py', 'main.py', 'version.md',
+        'handlers.py', 'menu.py', 'utils.py', 'main.py',
         # Конфигурация
         'bot_config.py',
     ]
-    
+
     # Core модули
     core_files = [
         'config.py', 'env_parser.py', 'http_client.py',
@@ -213,12 +213,29 @@ def download_bot_files():
         'services.py', 'validators.py', 'backup.py',
         'handlers_shared.py', '__init__.py'
     ]
-    
+
     # Init скрипты
     init_scripts = ['S99telegram_bot', 'S99unblock']
-    
+
     errors = []
-    
+    version_loaded = False
+
+    # ✅ Загружаем version.md ПЕРВЫМ (критично для проверки версии)
+    try:
+        url = f"{config.bot_url}/version.md"
+        local_path = os.path.join(bot_dir, 'version.md')
+        response = get_http_session().get(url, timeout=30, stream=True)
+        response.raise_for_status()
+        with open(local_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        version_loaded = True
+        log_error(f"✅ version.md загружен: {local_path}")
+    except Exception as e:
+        error_msg = f"❌ КРИТИЧЕСКАЯ ОШИБКА: Не удалось загрузить version.md: {str(e)}"
+        log_error(error_msg)
+        raise Exception(error_msg)  # ✅ Прерываем обновление если version.md не загрузился
+
     # Загрузка основных файлов бота
     for filename in bot_files:
         try:
@@ -286,10 +303,18 @@ def download_bot_files():
     critical_errors = [e for e in errors if 'main.py' in e or 'handlers.py' in e or 'utils.py' in e]
     if critical_errors:
         raise Exception("Критические ошибки загрузки: " + "; ".join(critical_errors))
-    
+
     # Предупреждение о не критических ошибках
     if errors:
         log_error(f"Не критические ошибки загрузки: {len(errors)} файлов")
+    
+    # ✅ ПРОВЕРКА: версия обновилась
+    try:
+        with open(os.path.join(bot_dir, 'version.md'), 'r') as f:
+            new_version = f.read().strip()
+        log_error(f"✅ Версия после обновления: {new_version}")
+    except Exception as e:
+        log_error(f"⚠️ Не удалось прочитать version.md: {e}")
 
 
 # =============================================================================

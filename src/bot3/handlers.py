@@ -800,22 +800,35 @@ def setup_handlers(bot):
     @bot.callback_query_handler(func=lambda call: call.data == "trigger_update")
     def handle_update(call):
         chat_id = call.message.chat.id
-        
+
+        # ✅ Логируем старую версию
+        old_version = get_local_version()
+        log_error(f"🔄 Начало обновления: версия {old_version}")
+
         # Пытаемся скрыть кнопку обновления (игнорируем ошибку если нельзя редактировать)
         try:
             bot.edit_message_reply_markup(chat_id=chat_id, message_id=call.message.message_id, reply_markup=None)
         except Exception as e:
             if "message can't be edited" not in str(e) and "message is not modified" not in str(e):
                 log_error(f"Error hiding update button: {e}")
-        
+
         msg = bot.send_message(chat_id, '⏳ Загрузка обновлений...')
 
         try:
             download_bot_files()
+            
+            # ✅ Проверяем новую версию после загрузки
+            try:
+                with open(config.paths["bot_dir"] + "/version.md", "r") as f:
+                    new_version = f.read().strip()
+                log_error(f"🔄 Файлы загружены: версия {new_version}")
+            except Exception as e:
+                log_error(f"⚠️ Не удалось прочитать version.md: {e}")
+            
             bot.edit_message_text('⏳ Файлы бота обновлены. Загрузка скрипта...', chat_id, msg.message_id)
             download_script(config.bot_url + "/script.sh", config.paths["script_sh"])
             bot.edit_message_text('⏳ Скрипт обновлён. Выполняю установку...', chat_id, msg.message_id)
-            
+
             # Очищаем кэш Python после обновления файлов
             import shutil
             cache_dir = config.paths["bot_dir"] + "/__pycache__"
