@@ -5,6 +5,15 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.30] - 2026-03-09
+
+### Исправлено
+
+- **Синтаксис ndmc с полным путём**
+  - `{UUID}/backup{timestamp}/startup-config.txt` (полный путь с файлом)
+  - `{UUID}/backup{timestamp}/firmware.bin` (полный путь с файлом)
+  - Keenetic создаёт папку автоматически
+
 ## [3.5.29] - 2026-03-09
 
 ### Добавлено
