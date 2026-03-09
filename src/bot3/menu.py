@@ -80,7 +80,10 @@ def create_backup_menu(backup_state):
 def create_drive_selection_menu(drives):
     markup = types.InlineKeyboardMarkup(row_width=1)
     for drive in drives:
-        button_text = f"💽 {drive['label']} ({drive['size']} GB свободно)"
+        # Получаем размер свободного места (если есть)
+        size = drive.get('size', 'N/A')
+        label = drive.get('label', drive.get('uuid', 'Unknown'))
+        button_text = f"💽 {label} ({size} GB свободно)"
         markup.add(create_button(button_text, f"backup_drive_{drive['uuid']}"))
     markup.add(create_button("🔙 Назад", "backup_menu"))
     return markup

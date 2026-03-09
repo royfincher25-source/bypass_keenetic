@@ -757,6 +757,14 @@ def get_available_drives():
             else:
                 current_drive['fstype'] = fstype
 
+        elif stripped.startswith("size:") and current_drive is not None:
+            # Получаем размер раздела в MB и конвертируем в GB
+            try:
+                size_mb = int(stripped.split(":", 1)[1].strip())
+                current_drive['size'] = round(size_mb / 1024, 1)
+            except (ValueError, IndexError):
+                current_drive['size'] = 'N/A'
+
     if current_drive:
         drives.append(current_drive)
 
