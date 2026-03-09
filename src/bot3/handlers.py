@@ -213,7 +213,8 @@ def setup_handlers(bot):
         except FileNotFoundError:
             return "N/A"
 
-    def get_remote_version(bot_url):
+    def get_remote_version(bot_url=None):
+        """Получение удалённой версии бота"""
         try:
             # Используем сессию из utils для connection pooling
             session = get_http_session()
@@ -223,6 +224,9 @@ def setup_handlers(bot):
                 'Pragma': 'no-cache',
                 'Expires': '0'
             }
+            # Если bot_url не указан, используем базовый URL
+            if bot_url is None:
+                bot_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3"
             # Добавляем timestamp для уникальности URL
             response = session.get(
                 f"{bot_url}/version.md?t={int(time.time())}",
@@ -243,8 +247,9 @@ def setup_handlers(bot):
                 state.last_stats_message_id = None
             except Exception:
                 pass
-        
-        bot_new_version = get_remote_version(config.bot_url)
+
+        # Получаем версию с жёстко закодированным URL (не зависит от config.bot_url)
+        bot_new_version = get_remote_version()
         bot_version = get_local_version()
         service_update_info = f"Установленная версия: {bot_version}\nДоступная версия: {bot_new_version}"
         
