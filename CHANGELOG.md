@@ -5,6 +5,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.36] - 2026-03-09
+
+### Исправлено
+
+- **Логирование для отладки Shadowsocks**
+  - Логирование `urlparse`: hostname, username, port
+  - Логирование декодирования base64
+  - Логирование method, password
+  - Логирование результата и ошибок
+
 ## [3.5.35] - 2026-03-09
 
 ### Исправлено
