@@ -781,27 +781,32 @@ def get_available_drives():
                 
                 for path in possible_paths:
                     if os.path.exists(path):
-                        # Получаем размер через df
+                        # Получаем размер через df (используем -h для человекочитаемого формата)
                         df_output = subprocess.check_output(
-                            ["df", "-BG", path],
+                            ["df", "-h", path],
                             text=True,
                             stderr=subprocess.STDOUT
                         )
-                        # Парсим вывод df: Filesystem 1G-blocks Used Available Use% Mounted
+                        # Парсим вывод df: Filesystem Size Used Avail Use% Mounted
                         lines = df_output.strip().split('\n')
                         if len(lines) >= 2:
                             parts = lines[1].split()
                             if len(parts) >= 4:
-                                # Available[3] = "14G" → 14
-                                available_str = parts[3].replace('G', '')
-                                drive['size'] = float(available_str)
+                                # Available[3] = "14G" или "14.5G" → 14.5
+                                available_str = parts[3].replace('G', '').replace('M', '')
+                                try:
+                                    drive['size'] = round(float(available_str), 1)
+                                except ValueError:
+                                    drive['size'] = 'N/A'
                                 break
                 
                 # Если ни один путь не подошёл
-                if drive.get('size') is None:
+                if drive.get('size') is None or drive.get('size') == 'N/A':
+                    # Пробуем получить размер из /proc/partitions или оставляем N/A
                     drive['size'] = 'N/A'
                     
-            except Exception:
+            except Exception as e:
+                log_error(f"Error getting disk size: {e}")
                 drive['size'] = 'N/A'
 
     return drives
@@ -828,47 +833,82 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         bot.edit_message_text("⏳ Создание бэкапа...", chat_id, progress_msg_id)
 
         # Получаем путь к диску
-        drive_path = selected_drive.get('path', '/mnt')
+        drive_path = selected_drive.get('path', '/tmp/mnt')
         archive_path = f"{drive_path}/backup_{time.strftime('%Y%m%d_%H%M%S')}.tar.gz"
         
         # Формируем список файлов для бэкапа на основе выбора
         tar_args = ["tar", "-czf", archive_path]
+        files_added = []
         
-        # Конфигурация
+        # Конфигурация (обязательно)
         if backup_state.startup_config:
-            tar_args.extend(["-C", "/opt/etc", "bot", "unblock"])
-            if os.path.exists("/opt/etc/tor"):
+            if os.path.exists("/opt/etc/bot"):
+                tar_args.extend(["-C", "/opt/etc", "bot"])
+                files_added.append("bot")
+            if os.path.exists("/opt/etc/unblock"):
+                tar_args.extend(["unblock"])
+                files_added.append("unblock")
+            if os.path.exists("/opt/etc/tor/torrc"):
                 tar_args.extend(["tor"])
-            if os.path.exists("/opt/etc/xray"):
+                files_added.append("tor")
+            if os.path.exists("/opt/etc/xray/config.json"):
                 tar_args.extend(["xray"])
-            if os.path.exists("/opt/etc/trojan"):
+                files_added.append("xray")
+            if os.path.exists("/opt/etc/trojan/config.json"):
                 tar_args.extend(["trojan"])
-            if os.path.exists("/opt/etc/shadowsocks"):
+                files_added.append("trojan")
+            if os.path.exists("/opt/etc/shadowsocks.json"):
                 tar_args.extend(["shadowsocks"])
+                files_added.append("shadowsocks")
         
-        # Прошивка
+        # Прошивка (startup-config.txt в корне)
         if backup_state.firmware:
-            try:
+            if os.path.exists("/startup-config.txt"):
                 tar_args.extend(["-C", "/", "startup-config.txt"])
-            except Exception:
-                pass  # Может отсутствовать
+                files_added.append("startup-config.txt")
         
         # Entware
         if backup_state.entware:
-            tar_args.extend(["-C", "/opt/root", "KeenSnap", "script.sh"])
-            tar_args.extend(["-C", "/opt/etc/init.d", "S99telegram_bot", "S99unblock"])
-            tar_args.extend(["-C", "/opt/etc", "crontab", "dnsmasq.conf"])
+            if os.path.exists("/opt/root/KeenSnap"):
+                tar_args.extend(["-C", "/opt/root", "KeenSnap"])
+                files_added.append("KeenSnap")
+            if os.path.exists("/opt/root/script.sh"):
+                tar_args.extend(["script.sh"])
+                files_added.append("script.sh")
+            if os.path.exists("/opt/etc/init.d/S99telegram_bot"):
+                tar_args.extend(["-C", "/opt/etc/init.d", "S99telegram_bot"])
+                files_added.append("S99telegram_bot")
+            if os.path.exists("/opt/etc/init.d/S99unblock"):
+                tar_args.extend(["S99unblock"])
+                files_added.append("S99unblock")
+            if os.path.exists("/opt/etc/crontab"):
+                tar_args.extend(["-C", "/opt/etc", "crontab"])
+                files_added.append("crontab")
+            if os.path.exists("/opt/etc/dnsmasq.conf"):
+                tar_args.extend(["dnsmasq.conf"])
+                files_added.append("dnsmasq.conf")
         
         # Другие файлы (кастомные)
         if backup_state.custom_files:
             # Дополнительные файлы можно добавить здесь
             pass
         
+        # Логирование для отладки
+        log_error(f"Backup files: {files_added}")
+        
         # Создание бэкапа
-        subprocess.run(tar_args, timeout=300, capture_output=True)
+        if len(tar_args) <= 3:  # Только tar -czf archive_path
+            raise Exception("Нет файлов для бэкапа")
+            
+        result = subprocess.run(tar_args, timeout=300, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise Exception(f"tar error: {result.stderr}")
 
         if os.path.exists(archive_path):
             file_size_mb = round(os.path.getsize(archive_path) / 1024 / 1024, 1)
+            
+            if file_size_mb < 0.5:
+                log_error(f"Warning: Backup size too small: {file_size_mb} MB, files: {files_added}")
 
             # Не отправляем файл (превышает лимит Telegram 50 MB)
             # Показываем информацию и инструкцию по скачиванию
@@ -876,6 +916,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 f"✅ Бэкап успешно создан!\n\n"
                 f"📦 Архив: `{archive_path}`\n"
                 f"💾 Размер: {file_size_mb} MB\n"
+                f"📁 Файлы: {', '.join(files_added)}\n"
                 f"⏱️ Время: {time.strftime('%H:%M:%S')}\n\n"
                 f"📥 **Как скачать:**\n\n"
                 f"**1. Через Telegram Desktop:**\n"
