@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock, mock_open
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from bot3.utils import load_bypass_list, save_bypass_list, clean_log
+from src.bot3.utils import load_bypass_list, save_bypass_list, clean_log
 
 
 # =============================================================================

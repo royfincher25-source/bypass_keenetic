@@ -12,8 +12,8 @@
 PYTHON := python3
 PIP := pip3
 PROJECT_DIR := $(shell pwd)
-BOT3_DIR := $(PROJECT_DIR)/bot3
-BOTLIGHT_DIR := $(PROJECT_DIR)/botlight
+BOT3_DIR := $(PROJECT_DIR)/src/bot3
+BOTLIGHT_DIR := $(PROJECT_DIR)/src/botlight
 
 # -----------------------------------------------------------------------------
 # HELP

@@ -35,16 +35,16 @@ jobs:
           pip install flake8 black isort pylint
       
       - name: Check formatting with black
-        run: black --check bot3/ botlight/ --exclude='.git|__pycache__|venv|.venv'
+        run: black --check src/bot3/ src/botlight/ --exclude='.git|__pycache__|venv|.venv'
         continue-on-error: true
-      
+
       - name: Check imports with isort
-        run: isort --check-only bot3/ botlight/ --skip=.git --skip=venv --skip=.venv
+        run: isort --check-only src/bot3/ src/botlight/ --skip=.git --skip=venv --skip=.venv
         continue-on-error: true
-      
+
       - name: Lint with flake8
         run: |
-          flake8 bot3/ botlight/ \
+          flake8 src/bot3/ src/botlight/ \
             --count \
             --select=E9,F63,F7,F82 \
             --show-source \
@@ -122,7 +122,7 @@ jobs:
           python -c "from dotenv import load_dotenv; load_dotenv('.env.test'); import os; assert os.environ.get('TELEGRAM_BOT_TOKEN'); print('✓ .env.example valid')"
       
       - name: Validate bot_config.py syntax (bot3)
-        run: python -m py_compile bot3/bot_config.py
-      
+        run: python -m py_compile src/bot3/bot_config.py
+
       - name: Validate bot_config.py syntax (botlight)
-        run: python -m py_compile botlight/bot_config.py
+        run: python -m py_compile src/botlight/bot_config.py

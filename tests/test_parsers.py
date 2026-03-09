@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from bot3.utils import parse_vless_key, parse_trojan_key, parse_shadowsocks_key
+from src.bot3.utils import parse_vless_key, parse_trojan_key, parse_shadowsocks_key
 
 
 # =============================================================================

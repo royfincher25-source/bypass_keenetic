@@ -10,9 +10,10 @@ import pytest
 from unittest.mock import MagicMock, patch, Mock
 from pathlib import Path
 
-# Добавляем корень проекта в path
+# Добавляем корень проекта и src в path
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
+sys.path.insert(0, str(ROOT_DIR / 'src'))
 
 
 # =============================================================================
@@ -28,13 +29,13 @@ def root_dir():
 @pytest.fixture(scope='session')
 def bot3_dir(root_dir):
     """Директория bot3"""
-    return root_dir / 'bot3'
+    return root_dir / 'src' / 'bot3'
 
 
 @pytest.fixture(scope='session')
 def botlight_dir(root_dir):
     """Директория botlight"""
-    return root_dir / 'botlight'
+    return root_dir / 'src' / 'botlight'
 
 
 @pytest.fixture
@@ -232,7 +233,7 @@ def mock_config():
         'bot_dir': '/opt/etc/bot',
     }
     
-    config.bot_url = 'https://raw.githubusercontent.com/test/bypass_keenetic/main/bot3'
+    config.bot_url = 'https://raw.githubusercontent.com/test/bypass_keenetic/main/src/bot3'
     
     return config
 
