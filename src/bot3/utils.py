@@ -905,8 +905,8 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 # Файл не найден — пробуем через ndmc (рабочий синтаксис из KeenSnap)
                 try:
                     # Рабочий синтаксис: copy startup-config <destination>
-                    # destination должен быть папкой, а не файлом!
-                    # KeenSnap создаёт: UUID/backupYYYY-MM-DD_HH-MM/
+                    # destination должен быть ПОЛНЫМ путём с именем файла!
+                    # KeenSnap создаёт: UUID/backupYYYY-MM-DD_HH-MM/DEVICE_ID_FW_VERSION_startup-config.txt
                     timestamp = time.strftime("%Y-%m-%d_%H-%M")
                     disk_uuid = selected_drive.get('uuid', '')
                     log_error(f"Selected drive: {selected_drive}, disk_uuid: {disk_uuid}")
@@ -914,17 +914,18 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                         import uuid
                         disk_uuid = str(uuid.uuid4())
                         log_error(f"Using generated UUID: {disk_uuid}")
-                    # Формируем папку: UUID/backup_YYYY-MM-DD_HH-MM/
-                    backup_folder = f"{disk_uuid}/backup{timestamp}"
-                    log_error(f"ndmc backup folder: {backup_folder}")
+                    # Формируем ПОЛНЫЙ путь с именем файла (как в KeenSnap)
+                    # Используем простое имя файла без DEVICE_ID
+                    destination = f"{disk_uuid}/backup{timestamp}/startup-config.txt"
+                    log_error(f"ndmc destination: {destination}")
                     result = subprocess.run(
-                        ["ndmc", "-c", f"copy startup-config {backup_folder}"],
+                        ["ndmc", "-c", f"copy startup-config {destination}"],
                         timeout=30, capture_output=True, text=True
                     )
                     log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                     if result.returncode == 0:
                         # Копируем с /tmp/mnt/{uuid}/{folder}/ для доступа
-                        src_path = f"/tmp/mnt/{disk_uuid}/{backup_folder}/startup-config.txt"
+                        src_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/startup-config.txt"
                         if os.path.exists(src_path):
                             files_to_backup.append(src_path)
                             files_added.append("startup-config.txt (ndmc)")
@@ -938,23 +939,23 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             # Прошивка роутера (firmware.bin) — рабочий синтаксис из KeenSnap
             try:
                 # Рабочий синтаксис: copy flash:/firmware <destination>
-                # destination должен быть папкой, а не файлом!
+                # destination должен быть ПОЛНЫМ путём с именем файла!
                 timestamp = time.strftime("%Y-%m-%d_%H-%M")
                 disk_uuid = selected_drive.get('uuid', '')
                 if not disk_uuid:
                     import uuid
                     disk_uuid = str(uuid.uuid4())
-                # Формируем папку: UUID/backup_YYYY-MM-DD_HH-MM/
-                backup_folder = f"{disk_uuid}/backup{timestamp}"
-                log_error(f"ndmc firmware folder: {backup_folder}")
+                # Формируем ПОЛНЫЙ путь с именем файла (как в KeenSnap)
+                destination = f"{disk_uuid}/backup{timestamp}/firmware.bin"
+                log_error(f"ndmc firmware destination: {destination}")
                 result = subprocess.run(
-                    ["ndmc", "-c", f"copy flash:/firmware {backup_folder}"],
+                    ["ndmc", "-c", f"copy flash:/firmware {destination}"],
                     timeout=300, capture_output=True, text=True
                 )
                 log_error(f"ndmc copy flash:/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                 if result.returncode == 0:
                     # Копируем с /tmp/mnt/{uuid}/{folder}/ для доступа
-                    src_path = f"/tmp/mnt/{disk_uuid}/{backup_folder}/firmware.bin"
+                    src_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/firmware.bin"
                     if os.path.exists(src_path):
                         files_to_backup.append(src_path)
                         files_added.append("firmware.bin")
