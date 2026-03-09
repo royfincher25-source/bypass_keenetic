@@ -5,6 +5,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.10] - 2026-03-09
+
+### Исправлено
+
+- **Отображение размера диска (N/A GB)**
+  - ndmc -c show media не возвращает size:
+  - Получение размера через `df -BG`
+  - Парсинг доступного места (Available column)
+  - Fallback на 'N/A' при ошибке
+
 ## [3.5.8] - 2026-03-09
 
 ### Исправлено
