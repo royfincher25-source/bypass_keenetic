@@ -876,12 +876,19 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             if os.path.exists("/opt/root/script.sh"):
                 files_to_backup.append("/opt/root/script.sh")
                 files_added.append("script.sh")
+            # Проверяем оба пути для init скриптов
             if os.path.exists("/opt/etc/init.d/S99telegram_bot"):
                 files_to_backup.append("/opt/etc/init.d/S99telegram_bot")
                 files_added.append("S99telegram_bot")
+            elif os.path.exists("/opt/etc/bot/S99telegram_bot"):
+                files_to_backup.append("/opt/etc/bot/S99telegram_bot")
+                files_added.append("S99telegram_bot (bot/)")
             if os.path.exists("/opt/etc/init.d/S99unblock"):
                 files_to_backup.append("/opt/etc/init.d/S99unblock")
                 files_added.append("S99unblock")
+            elif os.path.exists("/opt/etc/bot/S99unblock"):
+                files_to_backup.append("/opt/etc/bot/S99unblock")
+                files_added.append("S99unblock (bot/)")
             if os.path.exists("/opt/etc/crontab"):
                 files_to_backup.append("/opt/etc/crontab")
                 files_added.append("crontab")
