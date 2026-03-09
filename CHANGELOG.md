@@ -5,6 +5,17 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.32] - 2026-03-09
+
+### Исправлено
+
+- **Полное имя файла как в KeenSnap**
+  - Получение `DEVICE_ID` через `ndmc show version`
+  - Получение `FW_VERSION` (`sandbox_release`)
+  - `{DEVICE_ID}_{FW_VERSION}_startup-config.txt`
+  - `{DEVICE_ID}_{FW_VERSION}_firmware.bin`
+  - Точно такой же синтаксис как в KeenSnap
+
 ## [3.5.31] - 2026-03-09
 
 ### Исправлено
