@@ -768,6 +768,30 @@ def get_available_drives():
     if current_drive:
         drives.append(current_drive)
 
+    # Если размер не получен из ndmc, пробуем получить через df
+    for drive in drives:
+        if drive.get('size') == 'N/A' or drive.get('size') is None:
+            try:
+                path = drive.get('path', f"/tmp/mnt/{drive['uuid']}")
+                # Создаём точку монтирования если не существует
+                os.makedirs(path, exist_ok=True)
+                # Получаем размер через df
+                df_output = subprocess.check_output(
+                    ["df", "-BG", path],
+                    text=True,
+                    stderr=subprocess.STDOUT
+                )
+                # Парсим вывод df: Filesystem 1G-blocks Used Available Use% Mounted
+                lines = df_output.strip().split('\n')
+                if len(lines) >= 2:
+                    parts = lines[1].split()
+                    if len(parts) >= 4:
+                        # Available[3] = "14G" → 14
+                        available_str = parts[3].replace('G', '')
+                        drive['size'] = float(available_str)
+            except Exception:
+                drive['size'] = 'N/A'
+
     return drives
 
 
