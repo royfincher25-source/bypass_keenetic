@@ -13,14 +13,14 @@ class Menu:
         self.back_level = back_level
 
 class BackupState:
-    __slots__ = ['startup_config', 'firmware', 'entware', 'custom_files', 
+    __slots__ = ['startup_config', 'firmware', 'entware', 'custom_files',
                  'selected_drive', 'delete_archive', 'selection_msg_id']
-    
+
     def __init__(self):
-        self.startup_config = False
-        self.firmware = False
-        self.entware = False
-        self.custom_files = False
+        self.startup_config = True  # Выбрано по умолчанию
+        self.firmware = True  # Выбрано по умолчанию
+        self.entware = True  # Выбрано по умолчанию
+        self.custom_files = True  # Выбрано по умолчанию
         self.selected_drive = None
         self.delete_archive = False
         self.selection_msg_id = None
