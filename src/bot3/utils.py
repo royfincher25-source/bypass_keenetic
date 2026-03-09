@@ -790,26 +790,53 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
     """Создание бэкапа с параметрами (упрощённая версия)"""
     try:
         bot.edit_message_text("⏳ Создание бэкапа...", chat_id, progress_msg_id)
-        
-        # Простое создание бэкапа через скрипт
-        archive_path = f"/opt/root/backup_{time.strftime('%Y%m%d_%H%M%S')}.tar.gz"
-        
+
+        # Получаем путь к диску
+        drive_path = selected_drive.get('path', '/mnt')
+        archive_path = f"{drive_path}/backup_{time.strftime('%Y%m%d_%H%M%S')}.tar.gz"
+
+        # Создание бэкапа
         subprocess.run([
             "tar", "-czf", archive_path,
-            "-C", "/opt/etc", "bot", "unblock"
+            "-C", "/opt/etc", "bot", "unblock", "tor", "xray", "trojan",
+            "-C", "/opt/root", "KeenSnap", "script.sh",
+            "-C", "/opt/etc/init.d", "S99telegram_bot", "S99unblock",
+            "-C", "/opt/etc", "crontab", "dnsmasq.conf"
         ], timeout=300, capture_output=True)
-        
+
         if os.path.exists(archive_path):
-            bot.edit_message_text("✅ Бэкап создан, отправляю файл...", chat_id, progress_msg_id)
-            with open(archive_path, 'rb') as f:
-                bot.send_document(chat_id, f, caption="✅ Бэкап конфигурации")
+            file_size_mb = round(os.path.getsize(archive_path) / 1024 / 1024, 1)
+            bot.edit_message_text(
+                f"✅ Бэкап создан!\n\n"
+                f"📦 Архив: `{archive_path}`\n"
+                f"💾 Размер: {file_size_mb} MB",
+                chat_id, progress_msg_id,
+                parse_mode='Markdown'
+            )
             
-            # Очистка
-            if backup_state.delete_archive:
-                os.remove(archive_path)
+            # Отправка файла с увеличенным таймаутом
+            try:
+                with open(archive_path, 'rb') as f:
+                    bot.send_document(
+                        chat_id, f,
+                        caption=f"✅ Бэкап конфигурации\n💾 {file_size_mb} MB",
+                        timeout=300  # 5 минут на отправку
+                    )
+            except Exception as upload_error:
+                # Если отправка не удалась, сообщаем путь к файлу
+                log_error(f"Failed to send backup: {upload_error}")
+                bot.send_message(
+                    chat_id,
+                    f"⚠️ Не удалось отправить файл (превышен таймаут)\n\n"
+                    f"📦 Бэкап создан:\n"
+                    f"`{archive_path}`\n\n"
+                    f"📝 Скопируйте через SSH:\n"
+                    f"`scp root@192.168.1.1:{archive_path} ~/Downloads/`",
+                    parse_mode='Markdown'
+                )
         else:
             bot.edit_message_text("❌ Не удалось создать бэкап", chat_id, progress_msg_id)
-            
+
     except subprocess.TimeoutExpired:
         bot.edit_message_text("❌ Таймаут создания бэкапа", chat_id, progress_msg_id)
     except Exception as e:
