@@ -806,34 +806,29 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
 
         if os.path.exists(archive_path):
             file_size_mb = round(os.path.getsize(archive_path) / 1024 / 1024, 1)
+            
+            # Не отправляем файл (превышает лимит Telegram 50 MB)
+            # Показываем информацию и инструкцию по скачиванию
             bot.edit_message_text(
-                f"✅ Бэкап создан!\n\n"
+                f"✅ Бэкап успешно создан!\n\n"
                 f"📦 Архив: `{archive_path}`\n"
-                f"💾 Размер: {file_size_mb} MB",
+                f"💾 Размер: {file_size_mb} MB\n"
+                f"⏱️ Время: {time.strftime('%H:%M:%S')}\n\n"
+                f"📥 **Как скачать:**\n\n"
+                f"**1. Через Telegram Desktop:**\n"
+                f"   Файл слишком большой для отправки\n\n"
+                f"**2. Через SSH (рекомендуется):**\n"
+                f"   ```bash\n"
+                f"   scp root@192.168.1.1:{archive_path} ~/Downloads/\n"
+                f"   ```\n\n"
+                f"**3. Через WinSCP/FileZilla:**\n"
+                f"   - Хост: `192.168.1.1`\n"
+                f"   - Пользователь: `root`\n"
+                f"   - Пароль: `ваш пароль`\n"
+                f"   - Путь: `{archive_path}`",
                 chat_id, progress_msg_id,
                 parse_mode='Markdown'
             )
-            
-            # Отправка файла с увеличенным таймаутом
-            try:
-                with open(archive_path, 'rb') as f:
-                    bot.send_document(
-                        chat_id, f,
-                        caption=f"✅ Бэкап конфигурации\n💾 {file_size_mb} MB",
-                        timeout=300  # 5 минут на отправку
-                    )
-            except Exception as upload_error:
-                # Если отправка не удалась, сообщаем путь к файлу
-                log_error(f"Failed to send backup: {upload_error}")
-                bot.send_message(
-                    chat_id,
-                    f"⚠️ Не удалось отправить файл (превышен таймаут)\n\n"
-                    f"📦 Бэкап создан:\n"
-                    f"`{archive_path}`\n\n"
-                    f"📝 Скопируйте через SSH:\n"
-                    f"`scp root@192.168.1.1:{archive_path} ~/Downloads/`",
-                    parse_mode='Markdown'
-                )
         else:
             bot.edit_message_text("❌ Не удалось создать бэкап", chat_id, progress_msg_id)
 
