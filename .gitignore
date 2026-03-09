@@ -131,3 +131,4 @@ coverage.xml
 !requirements-test.txt
 !requirements-dev.txt
 "KN-1212_*"  
+"KN-1212_*/"  

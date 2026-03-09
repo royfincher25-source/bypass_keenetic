@@ -862,9 +862,9 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 files_to_backup.append("/opt/etc/shadowsocks.json")
                 files_added.append("shadowsocks.json")
         
-        # Прошивка (startup-config.txt в корне или /tmp/)
+        # Прошивка (startup-config.txt) — используем рабочий синтаксис из KeenSnap
         if backup_state.firmware:
-            # Проверяем несколько возможных путей
+            # Пытаемся найти готовый файл startup-config.txt
             firmware_paths = [
                 "/startup-config.txt",
                 "/tmp/startup-config.txt",
@@ -877,59 +877,40 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     files_added.append("startup-config.txt")
                     break
             else:
-                # Если файл не найден, пробуем получить через ndmc
+                # Файл не найден — пробуем через ndmc (рабочий синтаксис из KeenSnap)
                 try:
-                    # Сохраняем конфиг роутера через ndmc
-                    # Правильный синтаксис: copy <source> <destination>
-                    # Для Keenetic нужно указывать файловую систему: sys:/ или usb:/
-                    temp_fw = "sys:/tmp/backup_startup_config.txt"
+                    # Рабочий синтаксис: copy startup-config <destination>
+                    #destination = "sys:/tmp/backup_startup_config.txt"
+                    destination = "/tmp/backup_startup_config.txt"
                     result = subprocess.run(
-                        ["ndmc", "-c", f"copy startup-config {temp_fw}"],
+                        ["ndmc", "-c", f"copy startup-config {destination}"],
                         timeout=30, capture_output=True, text=True
                     )
                     log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
-                    if result.returncode == 0:
-                        # Копируем из sys:/tmp в /tmp для доступа
-                        subprocess.run(["cp", temp_fw.replace("sys:", ""), "/tmp/backup_startup_config.txt"])
-                        if os.path.exists("/tmp/backup_startup_config.txt"):
-                            files_to_backup.append("/tmp/backup_startup_config.txt")
-                            files_added.append("startup-config.txt (ndmc)")
+                    if result.returncode == 0 and os.path.exists(destination):
+                        files_to_backup.append(destination)
+                        files_added.append("startup-config.txt (ndmc)")
                     else:
-                        # Пробуем альтернативный способ: показать конфиг
-                        result2 = subprocess.run(
-                            ["ndmc", "-c", "show startup-config"],
-                            timeout=30, capture_output=True, text=True
-                        )
-                        log_error(f"ndmc show startup-config: returncode={result2.returncode}, len={len(result2.stdout)}")
-                        if result2.returncode == 0 and result2.stdout:
-                            with open("/tmp/backup_startup_config.txt", 'w') as f:
-                                f.write(result2.stdout)
-                            files_to_backup.append("/tmp/backup_startup_config.txt")
-                            files_added.append("startup-config.txt (show)")
+                        log_error("Warning: startup-config ndmc failed, trying alternative paths")
                 except Exception as e:
                     log_error(f"Failed to get startup-config: {e}")
-                    # Игнорируем, если файл не найден
             
-            # Прошивка роутера (firmware.bin)
+            # Прошивка роутера (firmware.bin) — рабочий синтаксис из KeenSnap
             try:
-                temp_bin = "sys:/tmp/backup_firmware.bin"
-                # Используем правильный синтаксис: copy flash/firmware <destination>
+                # Рабочий синтаксис: copy flash:/firmware <destination>
+                destination = "/tmp/backup_firmware.bin"
                 result = subprocess.run(
-                    ["ndmc", "-c", f"copy flash/firmware {temp_bin}"],
+                    ["ndmc", "-c", f"copy flash:/firmware {destination}"],
                     timeout=300, capture_output=True, text=True
                 )
-                log_error(f"ndmc copy flash/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
-                if result.returncode == 0:
-                    # Копируем из sys:/tmp в /tmp для доступа
-                    subprocess.run(["cp", temp_bin.replace("sys:", ""), "/tmp/backup_firmware.bin"])
-                    if os.path.exists("/tmp/backup_firmware.bin"):
-                        files_to_backup.append("/tmp/backup_firmware.bin")
-                        files_added.append("firmware.bin")
+                log_error(f"ndmc copy flash:/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
+                if result.returncode == 0 and os.path.exists(destination):
+                    files_to_backup.append(destination)
+                    files_added.append("firmware.bin")
                 else:
-                    log_error(f"Failed to copy firmware: {result.stderr}")
+                    log_error("Warning: firmware ndmc failed")
             except Exception as e:
                 log_error(f"Failed to get firmware: {e}")
-                # Игнорируем, если прошивка не найдена
         
         # Entware
         if backup_state.entware:
