@@ -5,6 +5,14 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.41] - 2026-03-10
+
+### Исправлено
+
+- **Экспорт `reset_http_session`**
+  - Добавлен в `core/__init__.py`
+  - Добавлен в `__all__`
+
 ## [3.5.40] - 2026-03-09
 
 ### Исправлено
