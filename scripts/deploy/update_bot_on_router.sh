@@ -29,8 +29,8 @@ curl -L -o bot_config.py https://raw.githubusercontent.com/royfincher25-source/b
 # Обновление core
 echo "Обновление core модуля..."
 cd /opt/etc/bot/core
-curl -L -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
-curl -L -o env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/env_parser.py
+curl -L -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/config.py
+curl -L -o env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/env_parser.py
 
 # Проверка размеров
 echo ""

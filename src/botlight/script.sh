@@ -10,7 +10,7 @@ fi
 # Чтение переменных
 MT_URL=$(grep "^MT_url" "$BOT_CONFIG" | awk -F'"' '{print $2}')
 BASE_URL=$(grep "^base_url" "$BOT_CONFIG" | awk -F'"' '{print $2}')
-BOT_URL="$BASE_URL/botlight"
+BOT_URL="$BASE_URL/src/botlight"
 PROXY0PORT=$(grep "proxy0port" "$BOT_CONFIG" | awk -F'=' '{print $2}' | awk '{print $1}')
 PROXY1PORT=$(grep "proxy1port" "$BOT_CONFIG" | awk -F'=' '{print $2}' | awk '{print $1}')
 PROXY2PORT=$(grep "proxy2port" "$BOT_CONFIG" | awk -F'=' '{print $2}' | awk '{print $1}')

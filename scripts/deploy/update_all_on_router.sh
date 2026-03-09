@@ -49,10 +49,10 @@ echo "[4/7] Обновление core модуля..."
 cd /opt/etc/bot/core
 
 echo "      config.py..."
-curl -L -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
+curl -L -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/config.py
 
 echo "      env_parser.py..."
-curl -L -o env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/env_parser.py
+curl -L -o env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/env_parser.py
 
 # 5. Очистка кэша
 echo "[5/7] Очистка кэша Python..."

@@ -86,8 +86,8 @@ curl -L --no-cache -o bot_config.py https://raw.githubusercontent.com/royfincher
 curl -L --no-cache -o menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
 
 cd /opt/etc/bot/core
-curl -L --no-cache -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
-curl -L --no-cache -o env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/env_parser.py
+curl -L --no-cache -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/config.py
+curl -L --no-cache -o env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/env_parser.py
 
 # 3. Проверка размеров
 cd /opt/etc/bot
@@ -127,8 +127,8 @@ wget -O bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypa
 wget -O menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
 
 cd /opt/etc/bot/core
-wget -O config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
-wget -O env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/env_parser.py
+wget -O config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/config.py
+wget -O env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/env_parser.py
 
 # Проверка
 cd /opt/etc/bot
@@ -180,8 +180,8 @@ curl -L --no-cache -o bot_config.py https://raw.githubusercontent.com/royfincher
 curl -L --no-cache -o menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
 
 cd /opt/etc/bot/core
-curl -L --no-cache -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
-curl -L --no-cache -o env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/env_parser.py
+curl -L --no-cache -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/config.py
+curl -L --no-cache -o env_parser.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/core/env_parser.py
 
 # Очистка
 cd /opt/etc/bot
