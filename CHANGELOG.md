@@ -5,6 +5,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.44] - 2026-03-10
+
+### Исправлено
+
+- **Обход кэша GitHub**
+  - Двойной сброс HTTP сессии с паузой
+  - Заголовки: `If-None-Match`, `If-Modified-Since`
+  - Random параметр в URL: `&r={os.urandom(4).hex()}`
+  - `allow_redirects=True`
+
 ## [3.5.43] - 2026-03-10
 
 ### Исправлено
