@@ -837,72 +837,61 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         archive_path = f"{drive_path}/backup_{time.strftime('%Y%m%d_%H%M%S')}.tar.gz"
         
         # Формируем список файлов для бэкапа на основе выбора
-        tar_args = ["tar", "-czf", archive_path]
-        files_added = []
+        # Используем список файлов вместо tar args для надёжности
+        files_to_backup = []
         
         # Конфигурация (обязательно)
         if backup_state.startup_config:
             if os.path.exists("/opt/etc/bot"):
-                tar_args.extend(["-C", "/opt/etc", "bot"])
-                files_added.append("bot")
+                files_to_backup.append("/opt/etc/bot")
             if os.path.exists("/opt/etc/unblock"):
-                tar_args.extend(["unblock"])
-                files_added.append("unblock")
+                files_to_backup.append("/opt/etc/unblock")
             if os.path.exists("/opt/etc/tor/torrc"):
-                tar_args.extend(["tor"])
-                files_added.append("tor")
+                files_to_backup.append("/opt/etc/tor")
             if os.path.exists("/opt/etc/xray/config.json"):
-                tar_args.extend(["xray"])
-                files_added.append("xray")
+                files_to_backup.append("/opt/etc/xray")
             if os.path.exists("/opt/etc/trojan/config.json"):
-                tar_args.extend(["trojan"])
-                files_added.append("trojan")
+                files_to_backup.append("/opt/etc/trojan")
             if os.path.exists("/opt/etc/shadowsocks.json"):
-                tar_args.extend(["shadowsocks"])
-                files_added.append("shadowsocks")
+                files_to_backup.append("/opt/etc/shadowsocks.json")
         
         # Прошивка (startup-config.txt в корне)
         if backup_state.firmware:
             if os.path.exists("/startup-config.txt"):
-                tar_args.extend(["-C", "/", "startup-config.txt"])
-                files_added.append("startup-config.txt")
+                files_to_backup.append("/startup-config.txt")
         
         # Entware
         if backup_state.entware:
             if os.path.exists("/opt/root/KeenSnap"):
-                tar_args.extend(["-C", "/opt/root", "KeenSnap"])
-                files_added.append("KeenSnap")
+                files_to_backup.append("/opt/root/KeenSnap")
             if os.path.exists("/opt/root/script.sh"):
-                tar_args.extend(["script.sh"])
-                files_added.append("script.sh")
+                files_to_backup.append("/opt/root/script.sh")
             if os.path.exists("/opt/etc/init.d/S99telegram_bot"):
-                tar_args.extend(["-C", "/opt/etc/init.d", "S99telegram_bot"])
-                files_added.append("S99telegram_bot")
+                files_to_backup.append("/opt/etc/init.d/S99telegram_bot")
             if os.path.exists("/opt/etc/init.d/S99unblock"):
-                tar_args.extend(["S99unblock"])
-                files_added.append("S99unblock")
+                files_to_backup.append("/opt/etc/init.d/S99unblock")
             if os.path.exists("/opt/etc/crontab"):
-                tar_args.extend(["-C", "/opt/etc", "crontab"])
-                files_added.append("crontab")
+                files_to_backup.append("/opt/etc/crontab")
             if os.path.exists("/opt/etc/dnsmasq.conf"):
-                tar_args.extend(["dnsmasq.conf"])
-                files_added.append("dnsmasq.conf")
-        
-        # Другие файлы (кастомные)
-        if backup_state.custom_files:
-            # Дополнительные файлы можно добавить здесь
-            pass
+                files_to_backup.append("/opt/etc/dnsmasq.conf")
         
         # Логирование для отладки
+        files_added = [f.split('/')[-1] for f in files_to_backup]
         log_error(f"Backup files: {files_added}")
         
         # Создание бэкапа
-        if len(tar_args) <= 3:  # Только tar -czf archive_path
-            raise Exception("Нет файлов для бэкапа")
-            
+        if not files_to_backup:
+            raise Exception("Нет файлов для бэкапа. Проверьте, установлены ли компоненты.")
+        
+        # Создаём tar с проверкой существования каждого файла
+        tar_args = ["tar", "-czf", archive_path] + files_to_backup
         result = subprocess.run(tar_args, timeout=300, capture_output=True, text=True)
+        
         if result.returncode != 0:
-            raise Exception(f"tar error: {result.stderr}")
+            # Игнорируем предупреждения, показываем только ошибки
+            stderr_lines = [l for l in result.stderr.split('\n') if l and 'No such file' not in l]
+            if stderr_lines:
+                raise Exception(f"tar error: {' '.join(stderr_lines)}")
 
         if os.path.exists(archive_path):
             file_size_mb = round(os.path.getsize(archive_path) / 1024 / 1024, 1)
