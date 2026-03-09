@@ -478,29 +478,92 @@ def notify_on_error():
 @notify_on_error()
 def parse_vless_key(key, bot=None, chat_id=None):
     """Парсинг VLESS ключа с кэшированием"""
-    from urllib.parse import urlparse, parse_qs
-    
+    from urllib.parse import urlparse, parse_qs, unquote
+    import re
+
     cache_key = f'vless:{key}'
-    
+
     if Cache.is_valid(cache_key):
+        log_error(f"VLESS кэш: {cache_key}")
         return Cache.get(cache_key)
-    
+
     # Парсинг (код из core/parsers.py для избежания импорта)
     if not key.startswith('vless://'):
         raise ValueError("Неверный формат ключа VLESS")
+
+    # Нормализация URL (как в Shadowsocks)
+    key = key.strip()
     
+    # Удаление невидимых символов
+    key = ''.join(c for c in key if ord(c) >= 32 or c in '\t\n\r')
+    
+    # Замена кириллических символов на латинские
+    cyrillic_to_latin = {
+        'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'у': 'y', 'х': 'x',
+        'А': 'A', 'Е': 'E', 'О': 'O', 'Р': 'P', 'С': 'C', 'У': 'Y', 'Х': 'X',
+        'і': 'i', 'ї': 'i', 'ё': 'e', 'І': 'I', 'Ї': 'I', 'Ё': 'E',
+    }
+    for cyr, lat in cyrillic_to_latin.items():
+        key = key.replace(cyr, lat)
+    
+    # URL decode
+    key = unquote(key)
+    
+    # Принудительная ASCII кодировка
+    try:
+        key = key.encode('ascii', 'ignore').decode('ascii')
+    except Exception as e:
+        log_error(f"VLESS ASCII encode error: {e}")
+    
+    log_error(f"VLESS normalized key: {key[:80]}...")
+
     url = key[8:]
     parsed_url = urlparse(url)
     
+    # Логирование для отладки
+    log_error(f"VLESS urlparse: hostname={parsed_url.hostname}, username={parsed_url.username}, port={parsed_url.port}")
+
     if not parsed_url.hostname or not parsed_url.username:
+        # Пробуем ручной парсинг (как в Shadowsocks)
+        log_error(f"VLESS: urlparse не смог распарсить, пробуем ручной парсинг")
+        try:
+            url_part = url.split('#')[0]
+            at_index = url_part.find('@')
+            if at_index > 0:
+                uuid = url_part[:at_index]
+                server_port = url_part[at_index+1:]
+                if ':' in server_port:
+                    server, port_str = server_port.split(':', 1)
+                    port = int(port_str)
+                    
+                    result = {
+                        'address': server,
+                        'port': port,
+                        'id': uuid,
+                        'security': '',
+                        'encryption': 'none',
+                        'pbk': '',
+                        'fp': '',
+                        'spx': '/',
+                        'flow': 'xtls-rprx-vision',
+                        'sni': '',
+                        'sid': ''
+                    }
+                    log_error(f"VLESS manual OK: address={result['address']}, port={result['port']}")
+                    Cache.set(cache_key, result, ttl=3600)
+                    return result
+        except Exception as e:
+            log_error(f"VLESS manual error: {e}")
+            pass
+        
         raise ValueError("Отсутствует адрес сервера или ID пользователя")
-    
+
     port = parsed_url.port or 443
     if not (1 <= port <= 65535):
         raise ValueError(f"Порт должен быть от 1 до 65535")
-    
+
     params = parse_qs(parsed_url.query)
-    
+
     result = {
         'address': parsed_url.hostname,
         'port': port,
@@ -515,6 +578,8 @@ def parse_vless_key(key, bot=None, chat_id=None):
         'sid': params.get('sid', [''])[0]
     }
     
+    log_error(f"VLESS OK: address={result['address']}, port={result['port']}, id={result['id'][:20]}...")
+
     Cache.set(cache_key, result, ttl=3600)  # Кэш на 1 час
     return result
 
