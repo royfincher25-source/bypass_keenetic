@@ -194,6 +194,8 @@ def setup_handlers(bot):
         subprocess.Popen(config.services['service_script'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True)
 
     def handle_backup(chat_id):
+        # Сбрасываем состояние при каждом открытии меню
+        state.backup_state = BackupState()
         inline_keyboard = create_backup_menu(state.backup_state)
         bot.send_message(chat_id, "Выберите файлы для бэкапа:", reply_markup=inline_keyboard)
 
