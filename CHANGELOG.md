@@ -5,6 +5,19 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.35] - 2026-03-09
+
+### Исправлено
+
+- **Парсинг Shadowsocks ключей**
+  - Поддержка ключей **без `@`** (альтернативный формат)
+  - Добавлен импорт `base64` и `re`
+  - Два формата:
+    - `ss://base64(method:password)@server:port` (стандарт)
+    - `ss://base64(method:password@server:port)` (альтернативный)
+  - Декодирование всего base64 пути
+  - Парсинг через regex: `method:password@server:port`
+
 ## [3.5.34] - 2026-03-09
 
 ### Исправлено
