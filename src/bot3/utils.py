@@ -839,59 +839,74 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         # Формируем список файлов для бэкапа на основе выбора
         # Используем список файлов вместо tar args для надёжности
         files_to_backup = []
+        files_added = []
         
         # Конфигурация (обязательно)
         if backup_state.startup_config:
             if os.path.exists("/opt/etc/bot"):
                 files_to_backup.append("/opt/etc/bot")
+                files_added.append("bot")
             if os.path.exists("/opt/etc/unblock"):
                 files_to_backup.append("/opt/etc/unblock")
-            if os.path.exists("/opt/etc/tor/torrc"):
+                files_added.append("unblock")
+            if os.path.exists("/opt/etc/tor"):
                 files_to_backup.append("/opt/etc/tor")
-            if os.path.exists("/opt/etc/xray/config.json"):
+                files_added.append("tor")
+            if os.path.exists("/opt/etc/xray"):
                 files_to_backup.append("/opt/etc/xray")
-            if os.path.exists("/opt/etc/trojan/config.json"):
+                files_added.append("xray")
+            if os.path.exists("/opt/etc/trojan"):
                 files_to_backup.append("/opt/etc/trojan")
+                files_added.append("trojan")
             if os.path.exists("/opt/etc/shadowsocks.json"):
                 files_to_backup.append("/opt/etc/shadowsocks.json")
+                files_added.append("shadowsocks.json")
         
         # Прошивка (startup-config.txt в корне)
         if backup_state.firmware:
             if os.path.exists("/startup-config.txt"):
                 files_to_backup.append("/startup-config.txt")
+                files_added.append("startup-config.txt")
         
         # Entware
         if backup_state.entware:
             if os.path.exists("/opt/root/KeenSnap"):
                 files_to_backup.append("/opt/root/KeenSnap")
+                files_added.append("KeenSnap")
             if os.path.exists("/opt/root/script.sh"):
                 files_to_backup.append("/opt/root/script.sh")
+                files_added.append("script.sh")
             if os.path.exists("/opt/etc/init.d/S99telegram_bot"):
                 files_to_backup.append("/opt/etc/init.d/S99telegram_bot")
+                files_added.append("S99telegram_bot")
             if os.path.exists("/opt/etc/init.d/S99unblock"):
                 files_to_backup.append("/opt/etc/init.d/S99unblock")
+                files_added.append("S99unblock")
             if os.path.exists("/opt/etc/crontab"):
                 files_to_backup.append("/opt/etc/crontab")
+                files_added.append("crontab")
             if os.path.exists("/opt/etc/dnsmasq.conf"):
                 files_to_backup.append("/opt/etc/dnsmasq.conf")
+                files_added.append("dnsmasq.conf")
         
         # Логирование для отладки
-        files_added = [f.split('/')[-1] for f in files_to_backup]
-        log_error(f"Backup files: {files_added}")
+        log_error(f"Backup files to add: {files_added}")
+        log_error(f"Backup paths: {files_to_backup}")
         
         # Создание бэкапа
         if not files_to_backup:
             raise Exception("Нет файлов для бэкапа. Проверьте, установлены ли компоненты.")
         
-        # Создаём tar с проверкой существования каждого файла
+        # Создаём tar с абсолютными путями
         tar_args = ["tar", "-czf", archive_path] + files_to_backup
         result = subprocess.run(tar_args, timeout=300, capture_output=True, text=True)
         
-        if result.returncode != 0:
-            # Игнорируем предупреждения, показываем только ошибки
-            stderr_lines = [l for l in result.stderr.split('\n') if l and 'No such file' not in l]
-            if stderr_lines:
-                raise Exception(f"tar error: {' '.join(stderr_lines)}")
+        # Проверяем наличие фатальных ошибок (не предупреждений)
+        fatal_errors = [l for l in result.stderr.split('\n') 
+                       if l and 'No such file' not in l and 'Removing leading' not in l]
+        
+        if result.returncode != 0 and fatal_errors:
+            raise Exception(f"tar error: {' '.join(fatal_errors)}")
 
         if os.path.exists(archive_path):
             file_size_mb = round(os.path.getsize(archive_path) / 1024 / 1024, 1)
