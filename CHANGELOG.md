@@ -5,6 +5,17 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.19] - 2026-03-09
+
+### Исправлено
+
+- **Бэкап прошивки роутера**
+  - Сохранение через `ndmc copy startup-config`
+  - Сохранение через `ndmc copy flash/firmware`
+  - Проверка нескольких путей для startup-config.txt
+  - Временные файлы для конфигов
+  - Разные сообщения об ошибках
+
 ## [3.5.18] - 2026-03-09
 
 ### Исправлено
