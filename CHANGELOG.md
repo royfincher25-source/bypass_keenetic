@@ -19,6 +19,52 @@
 - **QWEN.md** - Добавлена инструкция по обновлению бота на роутере
 - **LOGS_INSTRUCTION.md** - Создана полная инструкция по работе с логами
 
+## [3.5.0] - 2026-03-09
+
+### Изменено
+
+- **Полная реорганизация структуры проекта**
+  - 📁 `src/` — исходный код Python (bot3, botlight, core)
+  - 🚀 `deploy/` — production файлы (router, backup, config, lists)
+  - 🛠️ `tools/` — инструменты разработчика
+  - 📄 `STRUCTURE.md` — документация структуры проекта
+
+### Перемещено
+
+- **Python модули** → `src/` (3 директории)
+  - `bot3/` → `src/bot3/`
+  - `botlight/` → `src/botlight/`
+  - `core/` → `src/core/`
+
+- **Production скрипты** → `deploy/` (18 файлов)
+  - `100-*.sh`, `unblock_*.sh` → `deploy/router/`
+  - `backup_config.sh`, `cleanup_backups.sh` → `deploy/backup/`
+  - `KeenSnap/keensnap.sh` → `deploy/backup/keensnap/`
+  - `crontab`, `dnsmasq.conf` → `deploy/config/`
+  - `*_template.json`, `*_template.torrc` → `deploy/config/`
+  - `unblock*.txt` → `deploy/lists/`
+
+- **Инструменты** → `tools/` (2 файла)
+  - `check_config.py`, `push_to_github.bat`
+
+### Удалено
+
+- Пустые папки: `KeenSnap/`, `-p/`
+
+### Документация
+
+- **STRUCTURE.md** — полная структура проекта
+- **deploy/README.md** — документация по развёртыванию
+- **tools/README.md** — документация по инструментам
+
+### Статистика
+
+- **Файлов в корне:** 28 → 15 (**-46%**)
+- **Директорий в корне:** 10 → 7 (**-30%**)
+- **Перемещено файлов:** 23
+
+---
+
 ## [3.4.2] - 2026-03-09
 
 ### Изменено
