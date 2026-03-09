@@ -289,18 +289,42 @@ if [ "$1" = "-update" ]; then
     #echo "S35 tor остановлен"
 	
     # Что нужно обновить
+    echo "Обновление основных файлов бота..."
     curl -s -o "$BOT_DIR/main.py" "$BOT_URL/main.py" || exit 1
-	curl -s -o "$BOT_DIR/utils.py" "$BOT_URL/utils.py" || exit 1
-    #curl -s -o "$BOT_DIR/menu.py" "$BOT_URL/menu.py" || exit 1
-    #curl -s -o "$BOT_DIR/handlers.py" "$BOT_URL/handlers.py" || exit 1
-	curl -s -o "$TEMPLATES_DIR/tor_template.torrc" "$BASE_URL/tor_template.torrc" && echo "Шаблон Tor обновлен"
-    #curl -s -o "$SCRIPT_BU" "$BASE_URL/deploy/backup/keensnap/keensnap.sh" || exit 1
-	curl -s -o "$REDIRECT_SCRIPT" "$BASE_URL/100-redirect.sh" || exit 1
+    curl -s -o "$BOT_DIR/utils.py" "$BOT_URL/utils.py" || exit 1
+    curl -s -o "$BOT_DIR/menu.py" "$BOT_URL/menu.py" || exit 1
+    curl -s -o "$BOT_DIR/handlers.py" "$BOT_URL/handlers.py" || exit 1
+    curl -s -o "$BOT_DIR/bot_config.py" "$BOT_URL/bot_config.py" || exit 1
+    curl -s -o "$BOT_DIR/version.md" "$BOT_URL/version.md" || exit 1
+    
+    echo "Обновление core модулей..."
+    mkdir -p "$BOT_DIR/core"
+    curl -s -o "$BOT_DIR/core/config.py" "$BASE_URL/src/core/config.py" || exit 1
+    curl -s -o "$BOT_DIR/core/env_parser.py" "$BASE_URL/src/core/env_parser.py" || exit 1
+    curl -s -o "$BOT_DIR/core/http_client.py" "$BASE_URL/src/core/http_client.py" || exit 1
+    curl -s -o "$BOT_DIR/core/logging.py" "$BASE_URL/src/core/logging.py" || exit 1
+    curl -s -o "$BOT_DIR/core/logging_async.py" "$BASE_URL/src/core/logging_async.py" || exit 1
+    curl -s -o "$BOT_DIR/core/parsers.py" "$BASE_URL/src/core/parsers.py" || exit 1
+    curl -s -o "$BOT_DIR/core/services.py" "$BASE_URL/src/core/services.py" || exit 1
+    curl -s -o "$BOT_DIR/core/validators.py" "$BASE_URL/src/core/validators.py" || exit 1
+    curl -s -o "$BOT_DIR/core/backup.py" "$BASE_URL/src/core/backup.py" || exit 1
+    curl -s -o "$BOT_DIR/core/handlers_shared.py" "$BASE_URL/src/core/handlers_shared.py" || exit 1
+    curl -s -o "$BOT_DIR/core/__init__.py" "$BASE_URL/src/core/__init__.py" || exit 1
+    
+    echo "Обновление init скриптов..."
     curl -s -o "$INIT_BOT" "$BOT_URL/S99telegram_bot" || exit 1
+    curl -s -o "$BOT_DIR/S99unblock" "$BOT_URL/S99unblock" || exit 1
+    
+    echo "Обновление дополнительных файлов..."
+    curl -s -o "$TEMPLATES_DIR/tor_template.torrc" "$BASE_URL/tor_template.torrc" && echo "Шаблон Tor обновлен"
+    curl -s -o "$SCRIPT_BU" "$BASE_URL/deploy/backup/keensnap/keensnap.sh" || echo "keensnap.sh не обновлён"
+    curl -s -o "$REDIRECT_SCRIPT" "$BASE_URL/100-redirect.sh" || exit 1
+    
     echo "Обновления для бота загружены, применяем права"
     chmod 755 "$BOT_DIR"
     chmod 644 "$BOT_DIR"/*.py
-    #chmod 755 "$SCRIPT_BU"
+    chmod 755 "$BOT_DIR"/S99*
+    chmod 755 "$SCRIPT_BU"
 
     #"$INIT_DNSMASQ" restart > /dev/null 2>&1 || echo "❌ Ошибка при перезапуске dnsmasq"
     #"$INIT_SHADOWSOCKS" start > /dev/null 2>&1 || echo "❕S22shadowsocks не запущен, проверьте конфигурацию"

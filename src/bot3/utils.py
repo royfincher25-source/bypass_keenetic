@@ -194,10 +194,32 @@ def signal_handler(sig, frame):
         raise
 
 def download_bot_files():
-    """Загрузка файлов бота с обновлением version.md"""
-    bot_files = ['handlers.py', 'menu.py', 'utils.py', 'main.py', 'version.md']
+    """Загрузка всех файлов бота с обновлением version.md"""
     bot_dir = os.path.dirname(__file__)
-
+    core_dir = os.path.join(bot_dir, 'core')
+    
+    # Основные файлы бота
+    bot_files = [
+        # Основные файлы
+        'handlers.py', 'menu.py', 'utils.py', 'main.py', 'version.md',
+        # Конфигурация
+        'bot_config.py',
+    ]
+    
+    # Core модули
+    core_files = [
+        'config.py', 'env_parser.py', 'http_client.py',
+        'logging.py', 'logging_async.py', 'parsers.py',
+        'services.py', 'validators.py', 'backup.py',
+        'handlers_shared.py', '__init__.py'
+    ]
+    
+    # Init скрипты
+    init_scripts = ['S99telegram_bot', 'S99unblock']
+    
+    errors = []
+    
+    # Загрузка основных файлов бота
     for filename in bot_files:
         try:
             url = f"{config.bot_url}/{filename}"
@@ -208,21 +230,66 @@ def download_bot_files():
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
         except Exception as e:
-            log_error(f"Ошибка при загрузке {filename}: {str(e)}")
-            raise
+            error_msg = f"Ошибка при загрузке {filename}: {str(e)}"
+            log_error(error_msg)
+            errors.append(error_msg)
+    
+    # Загрузка core модулей
+    for filename in core_files:
+        try:
+            url = f"{config.base_url}/src/core/{filename}"
+            local_path = os.path.join(core_dir, filename)
+            # Создаём директорию core если не существует
+            if not os.path.exists(core_dir):
+                os.makedirs(core_dir, exist_ok=True)
+            response = get_http_session().get(url, timeout=30, stream=True)
+            response.raise_for_status()
+            with open(local_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        except Exception as e:
+            error_msg = f"Ошибка при загрузке core/{filename}: {str(e)}"
+            log_error(error_msg)
+            errors.append(error_msg)
+    
+    # Загрузка init скриптов
+    for script_name in init_scripts:
+        try:
+            url = f"{config.bot_url}/{script_name}"
+            local_path = os.path.join(bot_dir, script_name)
+            response = get_http_session().get(url, timeout=30, stream=True)
+            response.raise_for_status()
+            with open(local_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            # Установка прав на выполнение
+            os.chmod(local_path, 0o0755)
+        except Exception as e:
+            error_msg = f"Ошибка при загрузке {script_name}: {str(e)}"
+            log_error(error_msg)
+            errors.append(error_msg)
     
     # Загрузка обновлённого keensnap.sh
     try:
         keensnap_url = f"{config.base_url}/deploy/backup/keensnap/keensnap.sh"
         keensnap_path = config.paths.get("script_bu", "/opt/root/KeenSnap/keensnap.sh")
-        # Создаём директорию если не существует
         keensnap_dir = os.path.dirname(keensnap_path)
         if not os.path.exists(keensnap_dir):
             os.makedirs(keensnap_dir, exist_ok=True)
         download_script(keensnap_url, keensnap_path)
     except Exception as e:
-        log_error(f"Ошибка при загрузке keensnap.sh: {str(e)}")
-        # Не прерываем обновление, т.к. keensnap.sh опционален
+        error_msg = f"Ошибка при загрузке keensnap.sh: {str(e)}"
+        log_error(error_msg)
+        errors.append(error_msg)
+    
+    # Если есть критические ошибки (основные файлы), прерываем
+    critical_errors = [e for e in errors if 'main.py' in e or 'handlers.py' in e or 'utils.py' in e]
+    if critical_errors:
+        raise Exception("Критические ошибки загрузки: " + "; ".join(critical_errors))
+    
+    # Предупреждение о не критических ошибках
+    if errors:
+        log_error(f"Не критические ошибки загрузки: {len(errors)} файлов")
 
 
 # =============================================================================
