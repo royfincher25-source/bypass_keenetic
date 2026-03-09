@@ -85,19 +85,19 @@ pip3 install pyTelegramBotAPI==4.27.0
 mkdir -p /opt/etc/bot
 ```
 ```bash
-curl -o /opt/etc/bot/main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/main.py
+curl -o /opt/etc/bot/main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/main.py
 ```
 ```bash
-curl -o /opt/etc/bot/menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/menu.py
+curl -o /opt/etc/bot/menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
 ```
 ```bash
-curl -o /opt/etc/bot/utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
+curl -o /opt/etc/bot/utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/utils.py
 ```
 ```bash
-curl -o /opt/etc/bot/handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/handlers.py
+curl -o /opt/etc/bot/handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/handlers.py
 ```
 ```bash
-curl -o /opt/etc/bot/bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/bot_config.py
+curl -o /opt/etc/bot/bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/bot_config.py
 ```
 ```bash
 chmod 755 /opt/etc/bot

@@ -79,11 +79,11 @@ rm -f main.py handlers.py utils.py bot_config.py menu.py
 rm -f core/config.py core/env_parser.py
 
 # 2. Загрузка новых файлов
-curl -L --no-cache -o main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/main.py
-curl -L --no-cache -o handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/handlers.py
-curl -L --no-cache -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
-curl -L --no-cache -o bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/bot_config.py
-curl -L --no-cache -o menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/menu.py
+curl -L --no-cache -o main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/main.py
+curl -L --no-cache -o handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/handlers.py
+curl -L --no-cache -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/utils.py
+curl -L --no-cache -o bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/bot_config.py
+curl -L --no-cache -o menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
 
 cd /opt/etc/bot/core
 curl -L --no-cache -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
@@ -120,11 +120,11 @@ rm -f main.py handlers.py utils.py bot_config.py menu.py
 rm -f core/config.py core/env_parser.py
 
 # Загрузка через wget
-wget -O main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/main.py
-wget -O handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/handlers.py
-wget -O utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
-wget -O bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/bot_config.py
-wget -O menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/menu.py
+wget -O main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/main.py
+wget -O handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/handlers.py
+wget -O utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/utils.py
+wget -O bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/bot_config.py
+wget -O menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
 
 cd /opt/etc/bot/core
 wget -O config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py
@@ -173,11 +173,11 @@ rm -f main.py handlers.py utils.py bot_config.py menu.py
 rm -f core/config.py core/env_parser.py
 
 # Загрузка новых
-curl -L --no-cache -o main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/main.py
-curl -L --no-cache -o handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/handlers.py
-curl -L --no-cache -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
-curl -L --no-cache -o bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/bot_config.py
-curl -L --no-cache -o menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/menu.py
+curl -L --no-cache -o main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/main.py
+curl -L --no-cache -o handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/handlers.py
+curl -L --no-cache -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/utils.py
+curl -L --no-cache -o bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/bot_config.py
+curl -L --no-cache -o menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
 
 cd /opt/etc/bot/core
 curl -L --no-cache -o config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/core/config.py

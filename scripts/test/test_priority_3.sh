@@ -20,11 +20,11 @@ echo "[2/5] Обновление файлов..."
 
 # Обновление utils.py
 echo "      Загрузка bot3/utils.py..."
-curl -L -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
+curl -L -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/utils.py
 
 # Обновление handlers.py
 echo "      Загрузка bot3/handlers.py..."
-curl -L -o handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/handlers.py
+curl -L -o handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/handlers.py
 
 # Проверка размеров
 echo ""

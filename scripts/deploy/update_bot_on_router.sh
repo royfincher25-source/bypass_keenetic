@@ -12,19 +12,19 @@ cp -r /opt/etc/bot/* /opt/root/bot_backup_*/ 2>/dev/null
 
 # Обновление bot3 файлов
 echo "Обновление main.py..."
-curl -L -o main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/main.py
+curl -L -o main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/main.py
 
 echo "Обновление handlers.py..."
-curl -L -o handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/handlers.py
+curl -L -o handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/handlers.py
 
 echo "Обновление menu.py..."
-curl -L -o menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/menu.py
+curl -L -o menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
 
 echo "Обновление utils.py..."
-curl -L -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
+curl -L -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/utils.py
 
 echo "Обновление bot_config.py..."
-curl -L -o bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/bot_config.py
+curl -L -o bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/bot_config.py
 
 # Обновление core
 echo "Обновление core модуля..."

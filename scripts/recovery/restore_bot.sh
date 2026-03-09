@@ -40,7 +40,7 @@ else
     echo "      ❌ Функция НЕ НАЙДЕНА"
     echo "      Попробуем загрузить заново..."
     cd /opt/etc/bot
-    curl -L -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/bot3/utils.py
+    curl -L -o utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/utils.py
 fi
 
 # 5. Проверка .env
