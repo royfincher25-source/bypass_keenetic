@@ -5,6 +5,15 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.22] - 2026-03-09
+
+### Исправлено
+
+- **Бэкап прошивки (рабочий синтаксис из KeenSnap)**
+  - `copy startup-config /tmp/file.txt` (без `flash:/`)
+  - `copy flash:/firmware /tmp/file.bin` (с `/` после `flash:`)
+  - Путь: `/tmp/` вместо `sys:/tmp/`
+
 ## [3.5.21] - 2026-03-09
 
 ### Исправлено
