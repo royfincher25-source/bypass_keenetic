@@ -21,7 +21,7 @@ from menu import (
     get_menu_main, get_menu_bypass_files, get_menu_service, get_menu_keys_bridges,
     get_menu_bypass_list, get_menu_add_bypass, get_menu_remove_bypass,
     get_menu_tor, get_menu_shadowsocks, get_menu_vless, get_menu_trojan,
-    create_bypass_files_menu, create_backup_menu, BackupState, create_drive_selection_menu, create_delete_archive_menu,
+    create_bypass_files_menu, create_backup_menu, BackupState, create_drive_selection_menu,
     create_dns_override_menu, create_updates_menu, create_install_remove_menu
 )
 from utils import (
@@ -766,21 +766,10 @@ def setup_handlers(bot):
         if not selected_drive:
             bot.answer_callback_query(call.id, "❌ Выбранный диск недоступен", show_alert=True)
             return
-        state.backup_state.selected_drive = selected_drive
-        bot.edit_message_text(f"☑️ Выбран диск: {selected_drive['label']}\nУдалить архив с диска после создания бэкапа?", call.message.chat.id, state.backup_state.selection_msg_id, reply_markup=create_delete_archive_menu())
-
-    @bot.callback_query_handler(func=lambda call: call.data in ["backup_delete_yes", "backup_delete_no"])
-    def handle_delete_archive_choice(call):
-        if call.data == "backup_delete_yes":
-            state.backup_state.delete_archive = True
-            choice_text = "Да"
-        elif call.data == "backup_delete_no":
-            state.backup_state.delete_archive = False
-            choice_text = "Нет"
-        bot.edit_message_text(
-            f"☑️ Выбран диск: {state.backup_state.selected_drive['label']}\n☑️ Удалить архив: {choice_text}", call.message.chat.id, state.backup_state.selection_msg_id)
-        progress_msg = bot.send_message(call.message.chat.id, "⏳ Начинаем создание бэкапа, подождите!")
-        create_backup_with_params(bot, call.message.chat.id, state.backup_state, state.backup_state.selected_drive, progress_msg.message_id)
+        
+        # Сразу создаём бэкап без дополнительных вопросов
+        progress_msg = bot.send_message(call.message.chat.id, "⏳ Создание архива бэкапа, подождите...")
+        create_backup_with_params(bot, call.message.chat.id, state.backup_state, selected_drive, progress_msg.message_id)
         state.backup_state.__init__()
 
     @bot.callback_query_handler(func=lambda call: call.data == "backup_menu")
