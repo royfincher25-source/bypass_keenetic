@@ -880,30 +880,46 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 # Если файл не найден, пробуем получить через ndmc
                 try:
                     # Сохраняем конфиг роутера через ndmc
-                    import tempfile
-                    temp_fw = tempfile.mktemp(suffix=".txt")
+                    temp_fw = "/tmp/backup_startup_config.txt"
+                    # Используем правильный синтаксис: copy <source> <destination>
                     result = subprocess.run(
                         ["ndmc", "-c", f"copy startup-config {temp_fw}"],
                         timeout=30, capture_output=True, text=True
                     )
+                    log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                     if result.returncode == 0 and os.path.exists(temp_fw):
                         files_to_backup.append(temp_fw)
                         files_added.append("startup-config.txt (ndmc)")
+                    else:
+                        # Пробуем альтернативный способ: показать конфиг
+                        result2 = subprocess.run(
+                            ["ndmc", "-c", "show startup-config"],
+                            timeout=30, capture_output=True, text=True
+                        )
+                        log_error(f"ndmc show startup-config: returncode={result2.returncode}, len={len(result2.stdout)}")
+                        if result2.returncode == 0 and result2.stdout:
+                            with open(temp_fw, 'w') as f:
+                                f.write(result2.stdout)
+                            files_to_backup.append(temp_fw)
+                            files_added.append("startup-config.txt (show)")
                 except Exception as e:
                     log_error(f"Failed to get startup-config: {e}")
                     # Игнорируем, если файл не найден
             
             # Прошивка роутера (firmware.bin)
             try:
-                import tempfile
-                temp_bin = tempfile.mktemp(suffix=".bin")
+                temp_bin = "/tmp/backup_firmware.bin"
+                # Используем правильный синтаксис: copy flash/firmware <destination>
                 result = subprocess.run(
                     ["ndmc", "-c", f"copy flash/firmware {temp_bin}"],
-                    timeout=60, capture_output=True, text=True
+                    timeout=120, capture_output=True, text=True
                 )
+                log_error(f"ndmc copy flash/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                 if result.returncode == 0 and os.path.exists(temp_bin):
                     files_to_backup.append(temp_bin)
                     files_added.append("firmware.bin")
+                else:
+                    log_error(f"Failed to copy firmware: {result.stderr}")
             except Exception as e:
                 log_error(f"Failed to get firmware: {e}")
                 # Игнорируем, если прошивка не найдена
@@ -946,7 +962,27 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             if backup_state.startup_config or backup_state.entware:
                 raise Exception("Нет файлов для бэкапа. Проверьте, установлены ли компоненты.")
             elif backup_state.firmware:
-                raise Exception("Не удалось сохранить прошивку роутера. Возможно, нет доступа к ndmc.")
+                # Если выбрана только прошивка, но она не сохранилась — предупреждение, но не ошибка
+                log_error("Warning: Firmware backup failed, but continuing with empty backup")
+                # Создаём пустой маркер бэкапа
+                with open(archive_path, 'w') as f:
+                    f.write("# Backup failed - no files available\n")
+                    f.write(f"# Time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                file_size_mb = 0.001
+                bot.edit_message_text(
+                    f"⚠️ Не удалось сохранить прошивку роутера\n\n"
+                    f"📦 Пустой архив создан: `{archive_path.replace('_', '\\_')}`\n"
+                    f"💾 Размер: 0.001 MB\n"
+                    f"❌ Причина: ndmc не вернул данные\n\n"
+                    f"📝 Попробуйте вручную:\n"
+                    f"```bash\n"
+                    f"ndmc -c \"copy startup-config /tmp/config.txt\"\n"
+                    f"ndmc -c \"copy flash/firmware /tmp/firmware.bin\"\n"
+                    f"```",
+                    chat_id, progress_msg_id,
+                    parse_mode='Markdown'
+                )
+                return
             else:
                 raise Exception("Не выбраны компоненты для бэкапа.")
         
