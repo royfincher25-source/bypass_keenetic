@@ -5,6 +5,30 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.4] - 2026-03-09
+
+### Исправлено
+
+- **download_script() в handlers.py** — переданы аргументы `script_url` и `script_path`
+  - `handle_update()` — загрузка script.sh при обновлении
+  - `handle_install_callback()` — загрузка script.sh при установке
+  - `handle_remove_callback()` — загрузка script.sh при удалении
+  - Исправлена ошибка: `download_script() missing 2 required positional arguments`
+
+- **get_remote_version()** — используется URL по умолчанию
+  - Не зависит от `config.bot_url` в памяти
+  - URL: `https://raw.githubusercontent.com/.../main/src/bot3`
+  - Исправлена проблема: бот показывал "N/A" при проверке обновлений
+
+### Обновлено
+
+- **.qwen/QWEN.md** — полная актуализация инструкции
+  - Обновлены URL: `/bot3/` → `/src/bot3/`
+  - Добавлено описание 22 файлов для обновления
+  - Добавлены версии 3.4.0–3.5.3
+  - Добавлена структура проекта
+  - Добавлены критические URL
+
 ## [3.5.3] - 2026-03-09
 
 ### Добавлено
