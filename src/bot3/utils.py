@@ -641,6 +641,51 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
     # Если нет @, пробуем альтернативный формат
     # Формат: ss://base64(method:password@server:port)#name
     log_error(f"Shadowsocks: нет username, пробуем альтернативный формат")
+    
+    # === НОВЫЙ МЕТОД: Ручной парсинг ===
+    # Пробуем найти @ вручную
+    try:
+        # Убираем ss:// и #name
+        url_part = url.split('#')[0]
+        log_error(f"Shadowsocks url_part: {url_part[:80]}...")
+        
+        # Ищем последнюю @ (разделитель между base64 и server:port)
+        at_index = url_part.rfind('@')
+        if at_index > 0:
+            encoded = url_part[:at_index]
+            server_port = url_part[at_index+1:]
+            log_error(f"Shadowsocks manual: encoded={encoded[:50]}..., server_port={server_port}")
+            
+            # Парсим server:port
+            if ':' in server_port:
+                server, port_str = server_port.rsplit(':', 1)
+                port = int(port_str)
+                if not (1 <= port <= 65535):
+                    raise ValueError(f"Порт должен быть от 1 до 65535")
+                
+                # Декодируем base64
+                padding = 4 - (len(encoded) % 4)
+                if padding != 4:
+                    encoded += '=' * padding
+                
+                decoded = base64.b64decode(encoded).decode('utf-8')
+                log_error(f"Shadowsocks manual decoded: {decoded}")
+                method, password = decoded.split(':', 1)
+                
+                result = {
+                    'server': server,
+                    'port': port,
+                    'password': password,
+                    'method': method,
+                }
+                log_error(f"Shadowsocks manual OK: server={result['server']}, port={result['port']}")
+                Cache.set(cache_key, result, ttl=3600)
+                return result
+    except Exception as e:
+        log_error(f"Shadowsocks manual error: {e}")
+        pass
+    
+    # Старый альтернативный метод
     try:
         # Пробуем декодировать весь путь как base64
         encoded = url.split('#')[0]  # Убираем #name
