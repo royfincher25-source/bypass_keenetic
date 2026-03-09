@@ -935,11 +935,12 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     except Exception as e:
                         log_error(f"Failed to get device info: {e}")
                     
-                    # Сначала сохраняем в sys:/tmp (системная память)
-                    sys_destination = f"sys:/tmp/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
-                    log_error(f"ndmc sys destination: {sys_destination}")
+                    # Сначала сохраняем в /tmp (системная память)
+                    # Используем просто /tmp без sys: префикса
+                    sys_destination = f"/tmp/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
+                    log_error(f"ndmc destination: {sys_destination}")
                     
-                    # Создаём папку в sys:/tmp
+                    # Создаём папку в /tmp
                     try:
                         subprocess.run(["mkdir", "-p", f"/tmp/backup{timestamp}"], check=True)
                     except Exception as e:
@@ -951,7 +952,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     )
                     log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                     if result.returncode == 0:
-                        # Копируем из sys:/tmp на диск
+                        # Копируем из /tmp на диск
                         src_path = f"/tmp/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
                         dst_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
                         try:
@@ -998,11 +999,12 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 except Exception as e:
                     log_error(f"Failed to get device info: {e}")
                 
-                # Сначала сохраняем в sys:/tmp (системная память)
-                sys_destination = f"sys:/tmp/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
-                log_error(f"ndmc firmware sys destination: {sys_destination}")
+                # Сначала сохраняем в /tmp (системная память)
+                # Используем просто /tmp без sys: префикса
+                sys_destination = f"/tmp/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
+                log_error(f"ndmc firmware destination: {sys_destination}")
                 
-                # Создаём папку в sys:/tmp
+                # Создаём папку в /tmp
                 try:
                     subprocess.run(["mkdir", "-p", f"/tmp/backup{timestamp}"], check=True)
                 except Exception as e:
@@ -1014,7 +1016,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 )
                 log_error(f"ndmc copy flash:/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                 if result.returncode == 0:
-                    # Копируем из sys:/tmp на диск
+                    # Копируем из /tmp на диск
                     src_path = f"/tmp/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
                     dst_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
                     try:
