@@ -136,7 +136,7 @@ services = {
 # URLs
 # =============================================================================
 base_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main"
-bot_url = f"{base_url}/bot3"
+bot_url = f"{base_url}/src/bot3"
 
 # =============================================================================
 # BACKUP SETTINGS

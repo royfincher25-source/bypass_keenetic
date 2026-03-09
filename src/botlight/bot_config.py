@@ -107,7 +107,7 @@ services = {
 # URLs
 # -----------------------------------------------------------------------------
 base_url = os.environ.get('BASE_URL', 'https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main')
-bot_url = f"{base_url}/botlight"
+bot_url = f"{base_url}/src/botlight"
 MT_url = os.environ.get('MT_URL', 'http://bin.magitrickle.dev/packages/add_repo.sh')
 
 # -----------------------------------------------------------------------------

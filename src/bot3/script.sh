@@ -9,7 +9,7 @@ fi
 
 # Чтение URL
 BASE_URL=$(grep "^base_url" "$BOT_CONFIG" | awk -F'"' '{print $2}')
-BOT_URL="$BASE_URL/bot3"
+BOT_URL="$BASE_URL/src/bot3"
 
 # Чтение IP и портов
 lanip=$(grep "routerip" "$BOT_CONFIG" | awk -F"'" '{print $2}')
