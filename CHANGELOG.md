@@ -5,6 +5,15 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.31] - 2026-03-09
+
+### Исправлено
+
+- **Синтаксис ndmc с общей папкой Keenetic**
+  - `{UUID}:/backup{timestamp}/startup-config.txt` (через `:` после UUID)
+  - `{UUID}:/backup{timestamp}/firmware.bin` (через `:` после UUID)
+  - Используется общая папка диска как в KeenSnap
+
 ## [3.5.30] - 2026-03-09
 
 ### Исправлено
