@@ -5,6 +5,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.17] - 2026-03-09
+
+### Исправлено
+
+- **Markdown в Telegram**
+  - Экранирование символов: `_`, `.`, `!`, `()`, `-`, `**`
+  - `shadowsocks.json` → `shadowsocks\\_json`
+  - `192.168.1.1` → `192\\.168\\.1\\.1`
+  - Ошибка 400: can't parse entities исправлена
+
 ## [3.5.16] - 2026-03-09
 
 ### Исправлено
