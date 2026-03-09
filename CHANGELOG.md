@@ -5,6 +5,15 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.27] - 2026-03-09
+
+### Исправлено
+
+- **Синтаксис ndmc с папкой**
+  - `copy startup-config {UUID}/backup{timestamp}/` → `{UUID}/backup{timestamp}/startup-config.txt`
+  - `copy flash:/firmware {UUID}/backup{timestamp}/` → `{UUID}/backup{timestamp}/firmware.bin`
+  - ndmc требует папку, а не файл
+
 ## [3.5.26] - 2026-03-09
 
 ### Исправлено
