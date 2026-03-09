@@ -862,11 +862,51 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 files_to_backup.append("/opt/etc/shadowsocks.json")
                 files_added.append("shadowsocks.json")
         
-        # Прошивка (startup-config.txt в корне)
+        # Прошивка (startup-config.txt в корне или /tmp/)
         if backup_state.firmware:
-            if os.path.exists("/startup-config.txt"):
-                files_to_backup.append("/startup-config.txt")
-                files_added.append("startup-config.txt")
+            # Проверяем несколько возможных путей
+            firmware_paths = [
+                "/startup-config.txt",
+                "/tmp/startup-config.txt",
+                "/opt/startup-config.txt",
+                "/mnt/startup-config.txt"
+            ]
+            for fw_path in firmware_paths:
+                if os.path.exists(fw_path):
+                    files_to_backup.append(fw_path)
+                    files_added.append("startup-config.txt")
+                    break
+            else:
+                # Если файл не найден, пробуем получить через ndmc
+                try:
+                    # Сохраняем конфиг роутера через ndmc
+                    import tempfile
+                    temp_fw = tempfile.mktemp(suffix=".txt")
+                    result = subprocess.run(
+                        ["ndmc", "-c", f"copy startup-config {temp_fw}"],
+                        timeout=30, capture_output=True, text=True
+                    )
+                    if result.returncode == 0 and os.path.exists(temp_fw):
+                        files_to_backup.append(temp_fw)
+                        files_added.append("startup-config.txt (ndmc)")
+                except Exception as e:
+                    log_error(f"Failed to get startup-config: {e}")
+                    # Игнорируем, если файл не найден
+            
+            # Прошивка роутера (firmware.bin)
+            try:
+                import tempfile
+                temp_bin = tempfile.mktemp(suffix=".bin")
+                result = subprocess.run(
+                    ["ndmc", "-c", f"copy flash/firmware {temp_bin}"],
+                    timeout=60, capture_output=True, text=True
+                )
+                if result.returncode == 0 and os.path.exists(temp_bin):
+                    files_to_backup.append(temp_bin)
+                    files_added.append("firmware.bin")
+            except Exception as e:
+                log_error(f"Failed to get firmware: {e}")
+                # Игнорируем, если прошивка не найдена
         
         # Entware
         if backup_state.entware:
@@ -902,7 +942,13 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         
         # Создание бэкапа
         if not files_to_backup:
-            raise Exception("Нет файлов для бэкапа. Проверьте, установлены ли компоненты.")
+            # Если ничего не выбрано или файлы не найдены
+            if backup_state.startup_config or backup_state.entware:
+                raise Exception("Нет файлов для бэкапа. Проверьте, установлены ли компоненты.")
+            elif backup_state.firmware:
+                raise Exception("Не удалось сохранить прошивку роутера. Возможно, нет доступа к ndmc.")
+            else:
+                raise Exception("Не выбраны компоненты для бэкапа.")
         
         # Создаём tar с абсолютными путями
         tar_args = ["tar", "-czf", archive_path] + files_to_backup
