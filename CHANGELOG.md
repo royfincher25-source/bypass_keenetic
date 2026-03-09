@@ -5,6 +5,21 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.13] - 2026-03-09
+
+### Исправлено
+
+- **Создание бэкапа по выбору**
+  - `startup_config`: bot, unblock, tor, xray, trojan, shadowsocks
+  - `firmware`: startup-config.txt
+  - `entware`: KeenSnap, script.sh, init скрипты, crontab, dnsmasq.conf
+  - `custom_files`: резерв для будущих файлов
+
+- **Отображение размера диска**
+  - Проверка нескольких путей монтирования
+  - `/tmp/mnt/{uuid}`, `/mnt/{uuid}`, drive['path']
+  - Размер через `df -BG`
+
 ## [3.5.12] - 2026-03-09
 
 ### Исправлено
