@@ -880,16 +880,20 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 # Если файл не найден, пробуем получить через ndmc
                 try:
                     # Сохраняем конфиг роутера через ndmc
-                    temp_fw = "/tmp/backup_startup_config.txt"
-                    # Используем правильный синтаксис: copy <source> <destination>
+                    # Правильный синтаксис: copy <source> <destination>
+                    # Для Keenetic нужно указывать файловую систему: sys:/ или usb:/
+                    temp_fw = "sys:/tmp/backup_startup_config.txt"
                     result = subprocess.run(
                         ["ndmc", "-c", f"copy startup-config {temp_fw}"],
                         timeout=30, capture_output=True, text=True
                     )
                     log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
-                    if result.returncode == 0 and os.path.exists(temp_fw):
-                        files_to_backup.append(temp_fw)
-                        files_added.append("startup-config.txt (ndmc)")
+                    if result.returncode == 0:
+                        # Копируем из sys:/tmp в /tmp для доступа
+                        subprocess.run(["cp", temp_fw.replace("sys:", ""), "/tmp/backup_startup_config.txt"])
+                        if os.path.exists("/tmp/backup_startup_config.txt"):
+                            files_to_backup.append("/tmp/backup_startup_config.txt")
+                            files_added.append("startup-config.txt (ndmc)")
                     else:
                         # Пробуем альтернативный способ: показать конфиг
                         result2 = subprocess.run(
@@ -898,9 +902,9 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                         )
                         log_error(f"ndmc show startup-config: returncode={result2.returncode}, len={len(result2.stdout)}")
                         if result2.returncode == 0 and result2.stdout:
-                            with open(temp_fw, 'w') as f:
+                            with open("/tmp/backup_startup_config.txt", 'w') as f:
                                 f.write(result2.stdout)
-                            files_to_backup.append(temp_fw)
+                            files_to_backup.append("/tmp/backup_startup_config.txt")
                             files_added.append("startup-config.txt (show)")
                 except Exception as e:
                     log_error(f"Failed to get startup-config: {e}")
@@ -908,16 +912,19 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             
             # Прошивка роутера (firmware.bin)
             try:
-                temp_bin = "/tmp/backup_firmware.bin"
+                temp_bin = "sys:/tmp/backup_firmware.bin"
                 # Используем правильный синтаксис: copy flash/firmware <destination>
                 result = subprocess.run(
                     ["ndmc", "-c", f"copy flash/firmware {temp_bin}"],
-                    timeout=120, capture_output=True, text=True
+                    timeout=300, capture_output=True, text=True
                 )
                 log_error(f"ndmc copy flash/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
-                if result.returncode == 0 and os.path.exists(temp_bin):
-                    files_to_backup.append(temp_bin)
-                    files_added.append("firmware.bin")
+                if result.returncode == 0:
+                    # Копируем из sys:/tmp в /tmp для доступа
+                    subprocess.run(["cp", temp_bin.replace("sys:", ""), "/tmp/backup_firmware.bin"])
+                    if os.path.exists("/tmp/backup_firmware.bin"):
+                        files_to_backup.append("/tmp/backup_firmware.bin")
+                        files_added.append("firmware.bin")
                 else:
                     log_error(f"Failed to copy firmware: {result.stderr}")
             except Exception as e:
