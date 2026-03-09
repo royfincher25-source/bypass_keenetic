@@ -5,6 +5,15 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.23] - 2026-03-09
+
+### Исправлено
+
+- **Синтаксис ndmc с указанием ФС**
+  - `usb:/{uuid}/backup_startup_config.txt` вместо `/tmp/...`
+  - `usb:/{uuid}/backup_firmware.bin` вместо `/tmp/...`
+  - Копирование из `usb:/` в `/tmp/mnt/{uuid}/`
+
 ## [3.5.22] - 2026-03-09
 
 ### Исправлено
