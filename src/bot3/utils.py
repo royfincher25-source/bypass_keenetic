@@ -195,9 +195,9 @@ def signal_handler(sig, frame):
 
 def download_bot_files():
     """Загрузка всех файлов бота с обновлением version.md"""
-    from core import reset_http_session
-    
     # ✅ Сбрасываем HTTP сессию для избежания кэширования GitHub
+    # Импортируем напрямую из http_client (не через core.__init__)
+    from core.http_client import reset_http_session
     reset_http_session()
     log_error("HTTP сессия сброшена для обновления")
     
