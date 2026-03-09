@@ -12,6 +12,18 @@ from urllib3.util.retry import Retry
 _http_session = None
 
 
+def reset_http_session():
+    """
+    Сброс HTTP сессии (для использования при обновлении).
+    
+    Нужно вызывать при /update чтобы избежать кэширования GitHub.
+    """
+    global _http_session
+    if _http_session is not None:
+        _http_session.close()
+        _http_session = None
+
+
 def get_http_session():
     """
     Получение HTTP сессии с connection pooling.

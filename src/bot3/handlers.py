@@ -218,6 +218,10 @@ def setup_handlers(bot):
     def get_remote_version(bot_url=None):
         """Получение удалённой версии бота"""
         try:
+            # Сбрасываем сессию для избежания кэширования GitHub
+            from core import reset_http_session
+            reset_http_session()
+            
             # Используем сессию из utils для connection pooling
             session = get_http_session()
             # Добавляем заголовки для обхода кеша

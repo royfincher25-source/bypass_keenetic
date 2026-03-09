@@ -195,6 +195,12 @@ def signal_handler(sig, frame):
 
 def download_bot_files():
     """Загрузка всех файлов бота с обновлением version.md"""
+    from core import reset_http_session
+    
+    # ✅ Сбрасываем HTTP сессию для избежания кэширования GitHub
+    reset_http_session()
+    log_error("HTTP сессия сброшена для обновления")
+    
     bot_dir = os.path.dirname(__file__)
     core_dir = os.path.join(bot_dir, 'core')
 
