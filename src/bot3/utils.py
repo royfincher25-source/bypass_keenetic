@@ -906,7 +906,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 try:
                     # Рабочий синтаксис: copy startup-config <destination>
                     # destination должен быть ПОЛНЫМ путём с именем файла!
-                    # KeenSnap использует: UUID:/папка/файл.txt (через : после UUID)
+                    # KeenSnap использует: UUID:/папка/DEVICE_ID_FW_VERSION_file.txt
                     timestamp = time.strftime("%Y-%m-%d_%H-%M")
                     disk_uuid = selected_drive.get('uuid', '')
                     log_error(f"Selected drive: {selected_drive}, disk_uuid: {disk_uuid}")
@@ -914,9 +914,30 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                         import uuid
                         disk_uuid = str(uuid.uuid4())
                         log_error(f"Using generated UUID: {disk_uuid}")
+                    
+                    # Получаем DEVICE_ID и FW_VERSION как в KeenSnap
+                    device_id = "KN-1212"  # Значение по умолчанию
+                    fw_version = "stable_4.03.C.6.3-9"  # Значение по умолчанию
+                    try:
+                        version_output = subprocess.check_output(
+                            ["ndmc", "-c", "show version"],
+                            text=True, stderr=subprocess.STDOUT
+                        )
+                        for line in version_output.split('\n'):
+                            if 'hw_id:' in line:
+                                device_id = line.split(': ')[1].strip()
+                            elif 'sandbox:' in line:
+                                sandbox = line.split(': ')[1].strip()
+                            elif 'release:' in line:
+                                release = line.split(': ')[1].strip()
+                        fw_version = f"{sandbox}_{release}"
+                        log_error(f"Device: {device_id}, FW: {fw_version}")
+                    except Exception as e:
+                        log_error(f"Failed to get device info: {e}")
+                    
                     # Формируем ПОЛНЫЙ путь с именем файла (как в KeenSnap)
                     # Используем UUID:/папка/файл (через двоеточие!)
-                    destination = f"{disk_uuid}:/backup{timestamp}/startup-config.txt"
+                    destination = f"{disk_uuid}:/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
                     log_error(f"ndmc destination: {destination}")
                     result = subprocess.run(
                         ["ndmc", "-c", f"copy startup-config {destination}"],
@@ -925,7 +946,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                     if result.returncode == 0:
                         # Копируем с /tmp/mnt/{uuid}/{folder}/ для доступа
-                        src_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/startup-config.txt"
+                        src_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
                         if os.path.exists(src_path):
                             files_to_backup.append(src_path)
                             files_added.append("startup-config.txt (ndmc)")
@@ -945,9 +966,29 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 if not disk_uuid:
                     import uuid
                     disk_uuid = str(uuid.uuid4())
+                
+                # Получаем DEVICE_ID и FW_VERSION как в KeenSnap
+                device_id = "KN-1212"
+                fw_version = "stable_4.03.C.6.3-9"
+                try:
+                    version_output = subprocess.check_output(
+                        ["ndmc", "-c", "show version"],
+                        text=True, stderr=subprocess.STDOUT
+                    )
+                    for line in version_output.split('\n'):
+                        if 'hw_id:' in line:
+                            device_id = line.split(': ')[1].strip()
+                        elif 'sandbox:' in line:
+                            sandbox = line.split(': ')[1].strip()
+                        elif 'release:' in line:
+                            release = line.split(': ')[1].strip()
+                    fw_version = f"{sandbox}_{release}"
+                except Exception as e:
+                    log_error(f"Failed to get device info: {e}")
+                
                 # Формируем ПОЛНЫЙ путь с именем файла (как в KeenSnap)
                 # Используем UUID:/папка/файл (через двоеточие!)
-                destination = f"{disk_uuid}:/backup{timestamp}/firmware.bin"
+                destination = f"{disk_uuid}:/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
                 log_error(f"ndmc firmware destination: {destination}")
                 result = subprocess.run(
                     ["ndmc", "-c", f"copy flash:/firmware {destination}"],
@@ -956,7 +997,7 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 log_error(f"ndmc copy flash:/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                 if result.returncode == 0:
                     # Копируем с /tmp/mnt/{uuid}/{folder}/ для доступа
-                    src_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/firmware.bin"
+                    src_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
                     if os.path.exists(src_path):
                         files_to_backup.append(src_path)
                         files_added.append("firmware.bin")
