@@ -883,8 +883,13 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     # destination должен быть с указанием ФС: usb:/ или sys:/
                     # Получаем UUID диска для записи
                     import uuid
-                    disk_uuid = selected_drive.get('uuid', str(uuid.uuid4()))
+                    disk_uuid = selected_drive.get('uuid', '')
+                    log_error(f"Selected drive: {selected_drive}, disk_uuid: {disk_uuid}")
+                    if not disk_uuid:
+                        disk_uuid = str(uuid.uuid4())
+                        log_error(f"Using generated UUID: {disk_uuid}")
                     destination = f"usb:/{disk_uuid}/backup_startup_config.txt"
+                    log_error(f"ndmc destination: {destination}")
                     result = subprocess.run(
                         ["ndmc", "-c", f"copy startup-config {destination}"],
                         timeout=30, capture_output=True, text=True
@@ -907,8 +912,11 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             try:
                 # Рабочий синтаксис: copy flash:/firmware <destination>
                 import uuid
-                disk_uuid = selected_drive.get('uuid', str(uuid.uuid4()))
+                disk_uuid = selected_drive.get('uuid', '')
+                if not disk_uuid:
+                    disk_uuid = str(uuid.uuid4())
                 destination = f"usb:/{disk_uuid}/backup_firmware.bin"
+                log_error(f"ndmc firmware destination: {destination}")
                 result = subprocess.run(
                     ["ndmc", "-c", f"copy flash:/firmware {destination}"],
                     timeout=300, capture_output=True, text=True
