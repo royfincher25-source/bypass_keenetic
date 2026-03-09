@@ -880,16 +880,24 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 # Файл не найден — пробуем через ndmc (рабочий синтаксис из KeenSnap)
                 try:
                     # Рабочий синтаксис: copy startup-config <destination>
-                    #destination = "sys:/tmp/backup_startup_config.txt"
-                    destination = "/tmp/backup_startup_config.txt"
+                    # destination должен быть с указанием ФС: usb:/ или sys:/
+                    # Получаем UUID диска для записи
+                    import uuid
+                    disk_uuid = selected_drive.get('uuid', str(uuid.uuid4()))
+                    destination = f"usb:/{disk_uuid}/backup_startup_config.txt"
                     result = subprocess.run(
                         ["ndmc", "-c", f"copy startup-config {destination}"],
                         timeout=30, capture_output=True, text=True
                     )
                     log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
-                    if result.returncode == 0 and os.path.exists(destination):
-                        files_to_backup.append(destination)
-                        files_added.append("startup-config.txt (ndmc)")
+                    if result.returncode == 0:
+                        # Копируем с usb:/ в /tmp для доступа
+                        src_path = f"/tmp/mnt/{disk_uuid}/backup_startup_config.txt"
+                        if os.path.exists(src_path):
+                            files_to_backup.append(src_path)
+                            files_added.append("startup-config.txt (ndmc)")
+                        else:
+                            log_error(f"Warning: File not found at {src_path}")
                     else:
                         log_error("Warning: startup-config ndmc failed, trying alternative paths")
                 except Exception as e:
@@ -898,15 +906,22 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             # Прошивка роутера (firmware.bin) — рабочий синтаксис из KeenSnap
             try:
                 # Рабочий синтаксис: copy flash:/firmware <destination>
-                destination = "/tmp/backup_firmware.bin"
+                import uuid
+                disk_uuid = selected_drive.get('uuid', str(uuid.uuid4()))
+                destination = f"usb:/{disk_uuid}/backup_firmware.bin"
                 result = subprocess.run(
                     ["ndmc", "-c", f"copy flash:/firmware {destination}"],
                     timeout=300, capture_output=True, text=True
                 )
                 log_error(f"ndmc copy flash:/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
-                if result.returncode == 0 and os.path.exists(destination):
-                    files_to_backup.append(destination)
-                    files_added.append("firmware.bin")
+                if result.returncode == 0:
+                    # Копируем с usb:/ в /tmp для доступа
+                    src_path = f"/tmp/mnt/{disk_uuid}/backup_firmware.bin"
+                    if os.path.exists(src_path):
+                        files_to_backup.append(src_path)
+                        files_added.append("firmware.bin")
+                    else:
+                        log_error(f"Warning: File not found at {src_path}")
                 else:
                     log_error("Warning: firmware ndmc failed")
             except Exception as e:
