@@ -553,7 +553,7 @@ def parse_trojan_key(key, bot=None, chat_id=None):
 @notify_on_error()
 def parse_shadowsocks_key(key, bot=None, chat_id=None):
     """Парсинг Shadowsocks ключа с кэшированием"""
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, unquote
     import base64
     import re
 
@@ -565,6 +565,22 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
 
     if not key.startswith('ss://'):
         raise ValueError("Неверный формат ключа Shadowsocks")
+
+    # Нормализация URL (удаление лишних символов, пробелов)
+    key = key.strip()
+    
+    # Замена кириллических символов на латинские (частая проблема)
+    cyrillic_to_latin = {
+        'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'у': 'y', 'х': 'x',
+        'А': 'A', 'Е': 'E', 'О': 'O', 'Р': 'P', 'С': 'C', 'У': 'Y', 'Х': 'X',
+    }
+    for cyr, lat in cyrillic_to_latin.items():
+        key = key.replace(cyr, lat)
+    
+    # URL decode (если есть %XX символы)
+    key = unquote(key)
+    
+    log_error(f"Shadowsocks normalized key: {key[:80]}...")
 
     url = key[5:]
     parsed_url = urlparse(url)
