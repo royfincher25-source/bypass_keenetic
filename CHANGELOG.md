@@ -5,6 +5,16 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.20] - 2026-03-09
+
+### Исправлено
+
+- **Синтаксис ndmc для Keenetic**
+  - `sys:/tmp/backup_startup_config.txt` вместо `/tmp/...`
+  - `sys:/tmp/backup_firmware.bin` вместо `/tmp/...`
+  - Копирование из `sys:/tmp` в `/tmp` через `cp`
+  - Увеличен таймаут для firmware (300 сек)
+
 ## [3.5.19] - 2026-03-09
 
 ### Исправлено
