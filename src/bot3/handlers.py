@@ -221,26 +221,33 @@ def setup_handlers(bot):
             # Сбрасываем сессию для избежания кэширования GitHub
             # Импортируем напрямую из http_client (не через core.__init__)
             from core.http_client import reset_http_session
+            
+            # Двойной сброс сессии
             reset_http_session()
-
+            time.sleep(0.1)  # Небольшая пауза
+            reset_http_session()
+            
             # Используем сессию из utils для connection pooling
             session = get_http_session()
             # Добавляем заголовки для обхода кеша
             headers = {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
-                'Expires': '0'
+                'Expires': '0',
+                'If-None-Match': '',  # Сброс ETag
+                'If-Modified-Since': '0'  # Сброс Last-Modified
             }
             # Если bot_url не указан, используем базовый URL
             if bot_url is None:
                 bot_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3"
-            # Добавляем timestamp для уникальности URL
-            url = f"{bot_url}/version.md?t={int(time.time())}"
+            # Добавляем timestamp и random для уникальности URL
+            url = f"{bot_url}/version.md?t={int(time.time())}&r={os.urandom(4).hex()}"
             log_error(f"🌐 Запрос версии: {url}")
             response = session.get(
                 url,
                 headers=headers,
-                timeout=TIMEOUT_HTTP_REQUEST
+                timeout=TIMEOUT_HTTP_REQUEST,
+                allow_redirects=True
             )
             log_error(f"🌐 Ответ: status={response.status_code}, text={response.text.strip()}")
             return response.text.strip() if response.status_code == 200 else "N/A"
