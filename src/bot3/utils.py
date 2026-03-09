@@ -40,7 +40,7 @@ class Cache:
 
     _cache = {}
     _timestamps = {}
-    MAX_SIZE = 20
+    MAX_SIZE = 10  # Уменьшено с 20 для экономии памяти
 
     @classmethod
     def get(cls, key, default=None):

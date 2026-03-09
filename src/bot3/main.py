@@ -54,12 +54,12 @@ if __name__ == "__main__":
     cleanup_counter = 0
     while restart_count < config.MAX_RESTARTS:
         try:
-            # Очистка памяти каждые 100 итераций
+            # Очистка памяти каждые 50 итераций (~50 секунд)
             cleanup_counter += 1
-            if cleanup_counter >= 100:
+            if cleanup_counter >= 50:
                 cleanup_memory()
                 cleanup_counter = 0
-            
+
             bot.infinity_polling(long_polling_timeout=30, timeout=35, interval=1)
         except (telebot.apihelper.ApiException, requests.exceptions.RequestException) as err:
             log_error(f"Ошибка соединения или Telegram API: {str(err)}")
