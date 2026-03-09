@@ -772,23 +772,35 @@ def get_available_drives():
     for drive in drives:
         if drive.get('size') == 'N/A' or drive.get('size') is None:
             try:
-                path = drive.get('path', f"/tmp/mnt/{drive['uuid']}")
-                # Создаём точку монтирования если не существует
-                os.makedirs(path, exist_ok=True)
-                # Получаем размер через df
-                df_output = subprocess.check_output(
-                    ["df", "-BG", path],
-                    text=True,
-                    stderr=subprocess.STDOUT
-                )
-                # Парсим вывод df: Filesystem 1G-blocks Used Available Use% Mounted
-                lines = df_output.strip().split('\n')
-                if len(lines) >= 2:
-                    parts = lines[1].split()
-                    if len(parts) >= 4:
-                        # Available[3] = "14G" → 14
-                        available_str = parts[3].replace('G', '')
-                        drive['size'] = float(available_str)
+                # Пробуем разные пути монтирования
+                possible_paths = [
+                    f"/tmp/mnt/{drive['uuid']}",
+                    f"/mnt/{drive['uuid']}",
+                    drive.get('path', f"/tmp/mnt/{drive['uuid']}")
+                ]
+                
+                for path in possible_paths:
+                    if os.path.exists(path):
+                        # Получаем размер через df
+                        df_output = subprocess.check_output(
+                            ["df", "-BG", path],
+                            text=True,
+                            stderr=subprocess.STDOUT
+                        )
+                        # Парсим вывод df: Filesystem 1G-blocks Used Available Use% Mounted
+                        lines = df_output.strip().split('\n')
+                        if len(lines) >= 2:
+                            parts = lines[1].split()
+                            if len(parts) >= 4:
+                                # Available[3] = "14G" → 14
+                                available_str = parts[3].replace('G', '')
+                                drive['size'] = float(available_str)
+                                break
+                
+                # Если ни один путь не подошёл
+                if drive.get('size') is None:
+                    drive['size'] = 'N/A'
+                    
             except Exception:
                 drive['size'] = 'N/A'
 
@@ -811,26 +823,53 @@ def cleanup_memory():
 # =============================================================================
 
 def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progress_msg_id):
-    """Создание бэкапа с параметрами (упрощённая версия)"""
+    """Создание бэкапа с параметрами"""
     try:
         bot.edit_message_text("⏳ Создание бэкапа...", chat_id, progress_msg_id)
 
         # Получаем путь к диску
         drive_path = selected_drive.get('path', '/mnt')
         archive_path = f"{drive_path}/backup_{time.strftime('%Y%m%d_%H%M%S')}.tar.gz"
-
+        
+        # Формируем список файлов для бэкапа на основе выбора
+        tar_args = ["tar", "-czf", archive_path]
+        
+        # Конфигурация
+        if backup_state.startup_config:
+            tar_args.extend(["-C", "/opt/etc", "bot", "unblock"])
+            if os.path.exists("/opt/etc/tor"):
+                tar_args.extend(["tor"])
+            if os.path.exists("/opt/etc/xray"):
+                tar_args.extend(["xray"])
+            if os.path.exists("/opt/etc/trojan"):
+                tar_args.extend(["trojan"])
+            if os.path.exists("/opt/etc/shadowsocks"):
+                tar_args.extend(["shadowsocks"])
+        
+        # Прошивка
+        if backup_state.firmware:
+            try:
+                tar_args.extend(["-C", "/", "startup-config.txt"])
+            except Exception:
+                pass  # Может отсутствовать
+        
+        # Entware
+        if backup_state.entware:
+            tar_args.extend(["-C", "/opt/root", "KeenSnap", "script.sh"])
+            tar_args.extend(["-C", "/opt/etc/init.d", "S99telegram_bot", "S99unblock"])
+            tar_args.extend(["-C", "/opt/etc", "crontab", "dnsmasq.conf"])
+        
+        # Другие файлы (кастомные)
+        if backup_state.custom_files:
+            # Дополнительные файлы можно добавить здесь
+            pass
+        
         # Создание бэкапа
-        subprocess.run([
-            "tar", "-czf", archive_path,
-            "-C", "/opt/etc", "bot", "unblock", "tor", "xray", "trojan",
-            "-C", "/opt/root", "KeenSnap", "script.sh",
-            "-C", "/opt/etc/init.d", "S99telegram_bot", "S99unblock",
-            "-C", "/opt/etc", "crontab", "dnsmasq.conf"
-        ], timeout=300, capture_output=True)
+        subprocess.run(tar_args, timeout=300, capture_output=True)
 
         if os.path.exists(archive_path):
             file_size_mb = round(os.path.getsize(archive_path) / 1024 / 1024, 1)
-            
+
             # Не отправляем файл (превышает лимит Telegram 50 MB)
             # Показываем информацию и инструкцию по скачиванию
             bot.edit_message_text(
