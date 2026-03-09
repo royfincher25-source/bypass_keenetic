@@ -560,6 +560,7 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
     cache_key = f'ss:{key}'
 
     if Cache.is_valid(cache_key):
+        log_error(f"Shadowsocks кэш: {cache_key}")
         return Cache.get(cache_key)
 
     if not key.startswith('ss://'):
@@ -567,6 +568,9 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
 
     url = key[5:]
     parsed_url = urlparse(url)
+    
+    # Логирование для отладки
+    log_error(f"Shadowsocks urlparse: hostname={parsed_url.hostname}, username={parsed_url.username}, port={parsed_url.port}")
 
     # Пытаемся распарсить как стандартный URL с @
     # Формат: ss://base64(method:password)@server:port#name
@@ -584,8 +588,11 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
                 encoded += '=' * padding
 
             decoded = base64.b64decode(encoded).decode('utf-8')
+            log_error(f"Shadowsocks decoded: {decoded}")
             method, password = decoded.split(':', 1)
+            log_error(f"Shadowsocks method={method}, password={password}")
         except Exception as e:
+            log_error(f"Shadowsocks base64 error: {e}")
             raise ValueError(f"Ошибка декодирования base64: {str(e)}")
 
         result = {
@@ -594,20 +601,23 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
             'password': password,
             'method': method,
         }
+        log_error(f"Shadowsocks OK: server={result['server']}, port={result['port']}")
 
         Cache.set(cache_key, result, ttl=3600)
         return result
-    
+
     # Если нет @, пробуем альтернативный формат
     # Формат: ss://base64(method:password@server:port)#name
+    log_error(f"Shadowsocks: нет username, пробуем альтернативный формат")
     try:
         # Пробуем декодировать весь путь как base64
         encoded = url.split('#')[0]  # Убираем #name
         padding = 4 - (len(encoded) % 4)
         if padding != 4:
             encoded += '=' * padding
-        
+
         decoded = base64.b64decode(encoded).decode('utf-8')
+        log_error(f"Shadowsocks alt decoded: {decoded}")
         # decoded должен быть: method:password@server:port
         match = re.match(r'([^:]+):([^@]+)@([^:]+):(\d+)', decoded)
         if match:
@@ -618,11 +628,14 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
                 'password': password,
                 'method': method,
             }
+            log_error(f"Shadowsocks alt OK: server={result['server']}, port={result['port']}")
             Cache.set(cache_key, result, ttl=3600)
             return result
-    except Exception:
+    except Exception as e:
+        log_error(f"Shadowsocks alt error: {e}")
         pass
-    
+
+    log_error(f"Shadowsocks FAILED: Некорректные данные сервера")
     raise ValueError("Некорректные данные сервера")
 
 
