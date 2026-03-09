@@ -554,46 +554,76 @@ def parse_trojan_key(key, bot=None, chat_id=None):
 def parse_shadowsocks_key(key, bot=None, chat_id=None):
     """Парсинг Shadowsocks ключа с кэшированием"""
     from urllib.parse import urlparse
-    
+    import base64
+    import re
+
     cache_key = f'ss:{key}'
-    
+
     if Cache.is_valid(cache_key):
         return Cache.get(cache_key)
-    
+
     if not key.startswith('ss://'):
         raise ValueError("Неверный формат ключа Shadowsocks")
-    
+
     url = key[5:]
     parsed_url = urlparse(url)
+
+    # Пытаемся распарсить как стандартный URL с @
+    # Формат: ss://base64(method:password)@server:port#name
+    if parsed_url.hostname and parsed_url.username:
+        # Стандартный формат с @
+        port = parsed_url.port
+        if not port or not (1 <= port <= 65535):
+            raise ValueError(f"Порт должен быть от 1 до 65535")
+
+        # Декодирование base64
+        try:
+            encoded = parsed_url.username
+            padding = 4 - (len(encoded) % 4)
+            if padding != 4:
+                encoded += '=' * padding
+
+            decoded = base64.b64decode(encoded).decode('utf-8')
+            method, password = decoded.split(':', 1)
+        except Exception as e:
+            raise ValueError(f"Ошибка декодирования base64: {str(e)}")
+
+        result = {
+            'server': parsed_url.hostname,
+            'port': port,
+            'password': password,
+            'method': method,
+        }
+
+        Cache.set(cache_key, result, ttl=3600)
+        return result
     
-    if not parsed_url.hostname or not parsed_url.username:
-        raise ValueError("Некорректные данные сервера")
-    
-    port = parsed_url.port
-    if not port or not (1 <= port <= 65535):
-        raise ValueError(f"Порт должен быть от 1 до 65535")
-    
-    # Декодирование base64
+    # Если нет @, пробуем альтернативный формат
+    # Формат: ss://base64(method:password@server:port)#name
     try:
-        encoded = parsed_url.username
+        # Пробуем декодировать весь путь как base64
+        encoded = url.split('#')[0]  # Убираем #name
         padding = 4 - (len(encoded) % 4)
         if padding != 4:
             encoded += '=' * padding
         
         decoded = base64.b64decode(encoded).decode('utf-8')
-        method, password = decoded.split(':', 1)
-    except Exception as e:
-        raise ValueError(f"Ошибка декодирования base64: {str(e)}")
+        # decoded должен быть: method:password@server:port
+        match = re.match(r'([^:]+):([^@]+)@([^:]+):(\d+)', decoded)
+        if match:
+            method, password, server, port = match.groups()
+            result = {
+                'server': server,
+                'port': int(port),
+                'password': password,
+                'method': method,
+            }
+            Cache.set(cache_key, result, ttl=3600)
+            return result
+    except Exception:
+        pass
     
-    result = {
-        'server': parsed_url.hostname,
-        'port': port,
-        'password': password,
-        'method': method,
-    }
-    
-    Cache.set(cache_key, result, ttl=3600)
-    return result
+    raise ValueError("Некорректные данные сервера")
 
 
 # =============================================================================
