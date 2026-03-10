@@ -1,7 +1,7 @@
 # 📚 Структура проекта
 
-**Версия:** 3.4.2  
-**Дата:** 9 марта 2026 г.
+**Версия:** 3.5.46
+**Дата:** 10 марта 2026 г.
 
 ---
 
@@ -49,7 +49,7 @@ bypass_keenetic-main/
 │   │   ├── 100-unblock-vpn.sh        # Обработка VPN (KeenOS 3)
 │   │   ├── 100-unblock-vpn-v4.sh     # Обработка VPN (KeenOS 4+)
 │   │   ├── unblock_dnsmasq.sh        # Генерация dnsmasq.conf
-│   │   ├── unblock_ipset.sh          # Заполнение ipset IP
+│   │   ├── unblock_ipset.sh          # Заполнение ipset IP (v3.5.46, 21 сек)
 │   │   └── unblock_update.sh         # Принудительное обновление
 │   │
 │   ├── backup/                       # Скрипты бэкапа
@@ -79,9 +79,12 @@ bypass_keenetic-main/
 │   ├── README.md                     # Документация по скриптам
 │   ├── debug/                        # Отладочные скрипты
 │   ├── deploy/                       # Скрипты развёртывания
+│   │   └── DEPLOY_IPSET.md           # Развёртывание unblock_ipset.sh
 │   ├── fixes/                        # Исправление проблем
 │   ├── recovery/                     # Восстановление
 │   └── test/                         # Тестирование
+│       ├── router_check.sh           # Диагностика роутера
+│       └── ipset_benchmark.sh        # Бенчмарк производительности
 │
 ├── 📝 tests/                         # ТЕСТЫ
 │   ├── conftest.py                   # Конфигурация pytest
