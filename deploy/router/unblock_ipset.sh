@@ -15,7 +15,7 @@ DNS_SERVER="8.8.8.8"
 DNS_PORT="53"
 DNS_CACHE_DIR="/tmp/dns_cache"
 DNS_CACHE_TTL=3600  # 1 час в секундах
-MAX_PARALLEL=8      # Максимум параллельных DNS запросов
+MAX_PARALLEL=15     # Максимум параллельных DNS запросов (памяти достаточно)
 
 # =============================================================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -206,7 +206,10 @@ echo "✅ Завершено за ${DURATION}c"
 echo "📊 Статистика:"
 for ipset in unblocksh unblocktor unblockvless unblocktroj; do
     if ipset list "$ipset" -n 2>/dev/null | grep -q "^$ipset$"; then
-        count=$(ipset list "$ipset" 2>/dev/null | grep -c "^[0-9]" || echo 0)
+        count=$(ipset list "$ipset" 2>/dev/null | grep -c "^[0-9]")
+        count=${count:-0}
         echo "  $ipset: $count IP"
+    else
+        echo "  $ipset: 0 IP (не создан)"
     fi
 done
