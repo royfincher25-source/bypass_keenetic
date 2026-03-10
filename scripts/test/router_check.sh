@@ -19,23 +19,23 @@ else
 fi
 echo ""
 
-# 2. Проверка DNS на порту 40500
-echo "2. Проверка DNS порт 40500:"
-test_dns_40500=$(dig +short google.com @localhost -p 40500 2>/dev/null | head -1)
-if [ -n "$test_dns_40500" ]; then
-    echo "   ✅ DNS 40500: $test_dns_40500"
+# 2. Проверка DNS через nslookup
+echo "2. Проверка DNS (nslookup):"
+test_dns=$(nslookup google.com 8.8.8.8 2>/dev/null | grep -i 'address' | grep -v '8\.8\.8\.8' | head -1)
+if [ -n "$test_dns" ]; then
+    echo "   ✅ DNS 8.8.8.8: OK"
 else
-    echo "   ❌ DNS 40500: НЕ доступен"
+    echo "   ❌ DNS 8.8.8.8: НЕ доступен"
 fi
 echo ""
 
-# 3. Проверка DNS Google
-echo "3. Проверка DNS 8.8.8.8:"
-test_dns_google=$(dig +short google.com @8.8.8.8 +time=2 +tries=1 2>/dev/null | head -1)
-if [ -n "$test_dns_google" ]; then
-    echo "   ✅ DNS 8.8.8.8: $test_dns_google"
+# 3. Проверка DNS через dig (для сравнения)
+echo "3. Проверка DNS (dig):"
+test_dig=$(dig +short google.com @8.8.8.8 +time=2 +tries=1 2>/dev/null | head -1)
+if [ -n "$test_dig" ]; then
+    echo "   ✅ dig: OK"
 else
-    echo "   ❌ DNS 8.8.8.8: НЕ доступен"
+    echo "   ❌ dig: НЕ доступен"
 fi
 echo ""
 
@@ -77,7 +77,5 @@ echo "  БЫСТРЫЙ ТЕСТ"
 echo "========================================"
 echo ""
 echo "Команды для запуска:"
-echo "  rm -rf /tmp/dns_cache/*"
 echo "  time /opt/bin/unblock_ipset.sh"
-echo "  logread | grep unblock_ipset | tail -10"
 echo ""
