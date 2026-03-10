@@ -5,9 +5,6 @@
 # Совместимо с sh (Almquist shell)
 # =============================================================================
 
-TAG="ipset_benchmark"
-DNS_CACHE_DIR="/tmp/dns_cache"
-
 echo "========================================"
 echo "  ТЕСТ ПРОИЗВОДИТЕЛЬНОСТИ IPSET"
 echo "========================================"
@@ -30,29 +27,15 @@ echo ""
 echo "Проверка DNS:"
 
 echo -n "  Google DNS (8.8.8.8): "
-test_google=$(dig +short google.com @8.8.8.8 +time=2 +tries=1 2>/dev/null | head -1)
+test_google=$(nslookup google.com 8.8.8.8 2>/dev/null | grep -i 'address' | grep -v '8\.8\.8\.8' | head -1)
 if [ -n "$test_google" ]; then
     echo "OK"
 else
     echo "FAIL"
 fi
-
-echo -n "  Local DNS (40500): "
-test_local=$(dig +short google.com @localhost -p 40500 +time=2 +tries=1 2>/dev/null | head -1)
-if [ -n "$test_local" ]; then
-    echo "OK"
-else
-    echo "FAIL"
-fi
 echo ""
 
-# Тест 1: Очистка кэша
-echo "Очистка кэша DNS..."
-rm -rf "$DNS_CACHE_DIR"/* 2>/dev/null
-echo "  Кэш очищен"
-echo ""
-
-# Тест 2: Замер времени
+# Тест: Замер времени
 echo "Замер времени выполнения:"
 start_time=$(date +%s)
 
@@ -76,25 +59,24 @@ else
 fi
 echo "========================================"
 
-# Статистика по кэшу
-if [ -d "$DNS_CACHE_DIR" ]; then
-    cache_count=$(ls -1 "$DNS_CACHE_DIR"/*.cache 2>/dev/null | wc -l)
-    cache_size=$(du -sh "$DNS_CACHE_DIR" 2>/dev/null | cut -f1)
-    echo ""
-    echo "Кэш DNS: $cache_count файлов, $cache_size"
-fi
-
-# Логи
+# Статистика ipset
 echo ""
-echo "Последние логи:"
-logread | grep unblock_ipset | tail -5
+echo "Статистика ipset:"
+for ipset in unblocksh unblocktor unblockvless unblocktroj; do
+    if ipset list "$ipset" -n 2>/dev/null | grep -q "^$ipset$"; then
+        count=$(ipset list "$ipset" 2>/dev/null | grep -c "^[0-9]")
+        echo "  $ipset: $count IP"
+    else
+        echo "  $ipset: не создан"
+    fi
+done
 
 echo ""
 echo "Рекомендации:"
 if [ $duration -gt 120 ]; then
-    echo "  Время > 2 минут - уменьшите MAX_PARALLEL до 4"
+    echo "  Время > 2 минут - уменьшите MAX_PARALLEL до 10"
 elif [ $duration -gt 60 ]; then
-    echo "  Время > 1 минуты - проверьте скорость DNS"
+    echo "  Время > 1 минуты - проверьте DNS"
 else
     echo "  Время в норме"
 fi
