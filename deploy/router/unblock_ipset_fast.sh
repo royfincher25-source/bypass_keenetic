@@ -1,13 +1,14 @@
 #!/bin/sh
 # =============================================================================
-# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.4.6)
+# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.4.7)
 # =============================================================================
-# Прямая передача доменов в xargs без промежуточных файлов
+# Оптимальная параллельность: 30
 # =============================================================================
 
 TAG="unblock_ipset"
 DNS_SERVER="8.8.8.8"
 DNS_PORT="53"
+MAX_PARALLEL=30
 
 cut_local() {
     grep -vE '^0\.|^127\.|^10\.|^172\.16\.|^192\.168\.|^::1$'
@@ -22,13 +23,10 @@ process_list() {
     ipset create "$ipset_name" hash:net family inet hashsize 4096 maxelem 65536 -exist 2>/dev/null
     ipset flush "$ipset_name" 2>/dev/null
     
-    # DNS запросы -> IP + IP из файла -> ipset
+    # Домены -> DNS (параллельно) + IP из файла -> ipset
     {
-        # Домены -> DNS
         grep -vE '^#|^[0-9]|^$' "$list_file" | \
-            xargs -P50 -I{} dig +short {} @"$DNS_SERVER" -p "$DNS_PORT" +time=2 +tries=1 2>/dev/null
-        
-        # IP из файла
+            xargs -P$MAX_PARALLEL -I{} dig +short {} @"$DNS_SERVER" -p "$DNS_PORT" +time=2 +tries=1 2>/dev/null
         grep -E '^[0-9]' "$list_file" 2>/dev/null
     } | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | cut_local | \
         sort -u | sed "s/^/add $ipset_name /" | ipset restore -! 2>/dev/null
