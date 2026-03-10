@@ -1,8 +1,8 @@
 #!/bin/sh
 # =============================================================================
-# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.5.2)
+# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.5.3)
 # =============================================================================
-# Исправлен парсинг nslookup
+# Исправлен парсинг: grep -i address (без ^)
 # =============================================================================
 
 TAG="unblock_ipset"
@@ -17,10 +17,10 @@ resolve_one() {
     domain="$1"
     outfile="$2"
     nslookup "$domain" "$DNS_SERVER" 2>/dev/null | \
-        grep '^Address' | \
-        grep -v 'Address [0-9]*: 8\.8\.8\.8' | \
+        grep -i 'address' | \
+        grep -v '8\.8\.8\.8' | \
         sed 's/.*Address [0-9]*: //' | \
-        grep -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$' >> "$outfile"
+        grep -E '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' >> "$outfile"
 }
 
 process_list() {
@@ -38,7 +38,6 @@ process_list() {
     
     : > "$tmpips"
     
-    # Домены -> DNS параллельно
     count=0
     pids=""
     while read -r domain; do
@@ -62,10 +61,8 @@ EOF
         wait $pid 2>/dev/null
     done
     
-    # Добавляем IP из файла
     grep -E '^[0-9]' "$list_file" 2>/dev/null | cut_local >> "$tmpips"
     
-    # Загрузка в ipset
     ip_count=$(sort -u "$tmpips" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | wc -l)
     sort -u "$tmpips" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | cut_local | \
         sed "s/^/add $ipset_name /" | ipset restore -! 2>/dev/null
