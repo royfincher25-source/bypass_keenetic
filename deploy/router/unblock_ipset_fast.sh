@@ -7,7 +7,7 @@
 
 TAG="unblock_ipset"
 DNS_SERVER="8.8.8.8"
-MAX_PARALLEL=20
+MAX_PARALLEL=40
 
 cut_local() {
     grep -vE '^0\.|^127\.|^10\.|^172\.16\.|^192\.168\.|^::1$'
