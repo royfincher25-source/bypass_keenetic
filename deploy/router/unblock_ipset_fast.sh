@@ -1,49 +1,77 @@
 #!/bin/sh
 # =============================================================================
-# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.4.10)
+# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.5.0)
 # =============================================================================
-# Используем nslookup вместо dig (может быть быстрее)
+# Исправление для BusyBox xargs (нет -P)
+# Параллелизм через & (фон)
 # =============================================================================
 
 TAG="unblock_ipset"
 DNS_SERVER="8.8.8.8"
-MAX_PARALLEL=30
+MAX_PARALLEL=20
 
 cut_local() {
     grep -vE '^0\.|^127\.|^10\.|^172\.16\.|^192\.168\.|^::1$'
 }
 
+# Параллельный DNS для одного домена
+resolve_one() {
+    domain="$1"
+    outfile="$2"
+    dig +short "$domain" @"$DNS_SERVER" +time=1 +tries=1 2>/dev/null >> "$outfile"
+}
+
 process_list() {
     ipset_name="$1"
     list_file="$2"
+    tmpips="/tmp/ipset_${ipset_name}_$$.ips"
     
     if [ ! -f "$list_file" ]; then
         echo "⚠️ Нет файла: $list_file"
         return 1
     fi
     
-    domain_count=$(grep -vE '^#|^[0-9]|^$' "$list_file" 2>/dev/null | wc -l)
-    if [ "$domain_count" -eq 0 ]; then
-        echo "⊘ $ipset_name: пусто"
-        ipset create "$ipset_name" hash:net family inet hashsize 4096 maxelem 65536 -exist 2>/dev/null
-        ipset flush "$ipset_name" 2>/dev/null
-        return 0
-    fi
-    
     ipset create "$ipset_name" hash:net family inet hashsize 4096 maxelem 65536 -exist 2>/dev/null
     ipset flush "$ipset_name" 2>/dev/null
     
-    # Домены -> DNS (nslookup) + IP из файла -> ipset
-    {
-        grep -vE '^#|^[0-9]|^$' "$list_file" | \
-            xargs -P$MAX_PARALLEL -I{} nslookup {} "$DNS_SERVER" 2>/dev/null | \
-            grep -Eo 'Address[0-9]*: [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | \
-            grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
-        grep -E '^[0-9]' "$list_file" 2>/dev/null
-    } | cut_local | sort -u | sed "s/^/add $ipset_name /" | ipset restore -! 2>/dev/null
+    : > "$tmpips"
     
-    ip_count=$(ipset list "$ipset_name" 2>/dev/null | grep -c "^[0-9]")
+    # Домены -> DNS параллельно
+    count=0
+    pids=""
+    while read -r domain; do
+        [ -z "$domain" ] && continue
+        resolve_one "$domain" "$tmpips" &
+        pids="$pids $!"
+        count=$((count + 1))
+        
+        # Ждём каждые MAX_PARALLEL
+        if [ $count -ge $MAX_PARALLEL ]; then
+            for pid in $pids; do
+                wait $pid 2>/dev/null
+            done
+            pids=""
+            count=0
+        fi
+    done << EOF
+$(grep -vE '^#|^[0-9]|^$' "$list_file" 2>/dev/null)
+EOF
+    
+    # Ждём остальные
+    for pid in $pids; do
+        wait $pid 2>/dev/null
+    done
+    
+    # Добавляем IP из файла
+    grep -E '^[0-9]' "$list_file" 2>/dev/null | cut_local >> "$tmpips"
+    
+    # Загрузка в ipset
+    ip_count=$(sort -u "$tmpips" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | wc -l)
+    sort -u "$tmpips" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | cut_local | \
+        sed "s/^/add $ipset_name /" | ipset restore -! 2>/dev/null
+    
     echo "✅ $ipset_name: $ip_count IP"
+    rm -f "$tmpips"
 }
 
 # =============================================================================
@@ -51,7 +79,7 @@ process_list() {
 # =============================================================================
 
 START_TIME=$(date +%s)
-echo "🚀 Запуск (параллельно: $MAX_PARALLEL, nslookup)"
+echo "🚀 Запуск (параллельно: $MAX_PARALLEL, &)"
 
 process_list "unblocksh" "/opt/etc/unblock/shadowsocks.txt"
 process_list "unblocktor" "/opt/etc/unblock/tor.txt"
