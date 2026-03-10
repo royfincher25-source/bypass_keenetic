@@ -1,9 +1,8 @@
 #!/bin/sh
 # =============================================================================
-# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.5.0)
+# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.5.1)
 # =============================================================================
-# Исправление для BusyBox xargs (нет -P)
-# Параллелизм через & (фон)
+# nslookup вместо dig (быстрее на Entware)
 # =============================================================================
 
 TAG="unblock_ipset"
@@ -14,11 +13,12 @@ cut_local() {
     grep -vE '^0\.|^127\.|^10\.|^172\.16\.|^192\.168\.|^::1$'
 }
 
-# Параллельный DNS для одного домена
 resolve_one() {
     domain="$1"
     outfile="$2"
-    dig +short "$domain" @"$DNS_SERVER" +time=1 +tries=1 2>/dev/null >> "$outfile"
+    nslookup "$domain" "$DNS_SERVER" 2>/dev/null | \
+        grep -Eo 'Address[0-9]*: [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | \
+        grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' >> "$outfile"
 }
 
 process_list() {
@@ -45,7 +45,6 @@ process_list() {
         pids="$pids $!"
         count=$((count + 1))
         
-        # Ждём каждые MAX_PARALLEL
         if [ $count -ge $MAX_PARALLEL ]; then
             for pid in $pids; do
                 wait $pid 2>/dev/null
@@ -57,15 +56,12 @@ process_list() {
 $(grep -vE '^#|^[0-9]|^$' "$list_file" 2>/dev/null)
 EOF
     
-    # Ждём остальные
     for pid in $pids; do
         wait $pid 2>/dev/null
     done
     
-    # Добавляем IP из файла
     grep -E '^[0-9]' "$list_file" 2>/dev/null | cut_local >> "$tmpips"
     
-    # Загрузка в ipset
     ip_count=$(sort -u "$tmpips" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | wc -l)
     sort -u "$tmpips" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | cut_local | \
         sed "s/^/add $ipset_name /" | ipset restore -! 2>/dev/null
@@ -79,7 +75,7 @@ EOF
 # =============================================================================
 
 START_TIME=$(date +%s)
-echo "🚀 Запуск (параллельно: $MAX_PARALLEL, &)"
+echo "🚀 Запуск (параллельно: $MAX_PARALLEL, nslookup)"
 
 process_list "unblocksh" "/opt/etc/unblock/shadowsocks.txt"
 process_list "unblocktor" "/opt/etc/unblock/tor.txt"
