@@ -19,9 +19,10 @@ else
 fi
 echo ""
 
-# 2. Порт
-echo "2. Порт 31964:"
-port_check=$(netstat -tlnp 2>/dev/null | grep 31964)
+# 2. Порт (можно изменить через переменную)
+VLESS_PORT="${VLESS_PORT:-10810}"
+echo "2. Порт $VLESS_PORT:"
+port_check=$(netstat -tlnp 2>/dev/null | grep $VLESS_PORT)
 if [ -n "$port_check" ]; then
     echo "   ✅ Слушается"
     echo "   $port_check"
@@ -66,7 +67,7 @@ echo ""
 echo "6. Сервис Xray:"
 if [ -x /opt/etc/init.d/S24xray ]; then
     s24xray_status=$(/opt/etc/init.d/S24xray status 2>&1)
-    if echo "$s24xray_status" | grep -q "running"; then
+    if echo "$s24xray_status" | grep -q "running\|started\|running\|already"; then
         echo "   ✅ АКТИВЕН"
     else
         echo "   ❌ НЕ АКТИВЕН"
