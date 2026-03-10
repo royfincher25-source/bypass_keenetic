@@ -41,12 +41,12 @@ else
 fi
 echo ""
 
-# 4. YouTube
-echo "4. Доступ к YouTube:"
-youtube_test=$(curl -I -s --connect-timeout 5 https://www.youtube.com 2>/dev/null | head -1)
-if [ -n "$youtube_test" ]; then
+# 4. Telegram (web)
+echo "4. Доступ к Telegram:"
+telegram_test=$(curl -I -s --connect-timeout 5 https://web.telegram.org 2>/dev/null | head -1)
+if [ -n "$telegram_test" ]; then
     echo "   ✅ ОТКРЫВАЕТСЯ"
-    echo "   $youtube_test"
+    echo "   $telegram_test"
 else
     echo "   ❌ НЕ ДОСТУПЕН"
 fi
@@ -94,8 +94,8 @@ if [ "$ip_count" -eq 0 ]; then
     echo ""
 fi
 
-if [ -z "$youtube_test" ]; then
-    echo "❌ YouTube не доступен:"
+if [ -z "$telegram_test" ]; then
+    echo "❌ Telegram не доступен:"
     echo "   1. Проверьте DNS"
     echo "   2. Обновите списки: /opt/bin/unblock_ipset.sh"
     echo "   3. Проверьте конфиг: /opt/etc/xray/config.json"

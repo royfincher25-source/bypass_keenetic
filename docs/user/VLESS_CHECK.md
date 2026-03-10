@@ -12,16 +12,16 @@
 ps | grep xray
 
 # 2. Проверка порта
-netstat -tlnp | grep 31964
+netstat -tlnp | grep 10810
 
 # 3. Тест доступа
-curl -I https://www.youtube.com
+curl -I https://web.telegram.org
 ```
 
 **Если всё OK:**
 - ✅ Процесс `xray` запущен
-- ✅ Порт `31964` слушается
-- ✅ YouTube открывается
+- ✅ Порт `10810` слушается
+- ✅ Telegram открывается
 
 ---
 
@@ -139,17 +139,17 @@ Address 1: 142.250.180.78
 
 ---
 
-### 7. Тест доступа к YouTube
+### 7. Тест доступа к Telegram
 
 ```bash
 # HTTP запрос
-curl -I https://www.youtube.com
+curl -I https://web.telegram.org
 
 # Тест загрузки
-curl -o /dev/null -s -w "%{time_total}\n" https://www.youtube.com
+curl -o /dev/null -s -w "%{time_total}\n" https://web.telegram.org
 
 # Проверка IP
-curl -s https://www.youtube.com | head -1
+curl -s https://web.telegram.org | head -1
 ```
 
 **Ожидаемый вывод:**
@@ -223,22 +223,22 @@ cat /opt/etc/xray/config.json | grep -i "vless"
 
 ---
 
-### Проблема 2: YouTube не открывается
+### Проблема 2: Telegram не открывается
 
 **Проверка по шагам:**
 
 ```bash
 # 1. Проверка DNS
-nslookup youtube.com 8.8.8.8
+nslookup web.telegram.org 8.8.8.8
 
 # 2. Проверка ipset
 ipset list unblockvless | grep -c "^[0-9]"
 
 # 3. Проверка маршрутизации
-iptables -t nat -L PREROUTING -nv | grep 31964
+iptables -t nat -L PREROUTING -nv | grep 10810
 
 # 4. Тест через proxy
-curl -x socks5://localhost:31964 https://www.youtube.com
+curl -x socks5://localhost:10810 https://web.telegram.org
 ```
 
 **Возможные причины:**
@@ -296,8 +296,8 @@ top | grep xray
 ### Быстрая проверка (30 сек):
 
 - [ ] `ps | grep xray` — процесс запущен
-- [ ] `netstat -tlnp | grep 31964` — порт слушается
-- [ ] `curl -I https://www.youtube.com` — YouTube открывается
+- [ ] `netstat -tlnp | grep 10810` — порт слушается
+- [ ] `curl -I https://web.telegram.org` — Telegram открывается
 
 ### Подробная проверка (2 мин):
 
@@ -402,7 +402,7 @@ chmod +x /opt/bin/check_vless.sh
 ✅ Процесс запущен
 ✅ Порт слушается
 ❌ ПУСТО (ipset)
-✅ YouTube открывается
+✅ Telegram открывается
 ✅ DNS работает
 ```
 
