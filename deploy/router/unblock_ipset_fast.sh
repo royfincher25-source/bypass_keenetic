@@ -1,17 +1,15 @@
 #!/bin/sh
 # =============================================================================
-# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.4.8)
+# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.4.9)
 # =============================================================================
-# Исправления:
-# - Убраны logger (нет на некоторых роутерах)
-# - Проверка на пустые списки
-# - Таймаут на весь скрипт через watchdog
+# Агрессивный таймаут DNS: 1 секунда
 # =============================================================================
 
 TAG="unblock_ipset"
 DNS_SERVER="8.8.8.8"
 DNS_PORT="53"
 MAX_PARALLEL=30
+DNS_TIMEOUT=1
 
 cut_local() {
     grep -vE '^0\.|^127\.|^10\.|^172\.16\.|^192\.168\.|^::1$'
@@ -37,10 +35,10 @@ process_list() {
     ipset create "$ipset_name" hash:net family inet hashsize 4096 maxelem 65536 -exist 2>/dev/null
     ipset flush "$ipset_name" 2>/dev/null
     
-    # Домены -> DNS (параллельно) + IP из файла -> ipset
+    # Домены -> DNS (параллельно, таймаут 1 сек) + IP из файла -> ipset
     {
         grep -vE '^#|^[0-9]|^$' "$list_file" | \
-            xargs -P$MAX_PARALLEL -I{} dig +short {} @"$DNS_SERVER" -p "$DNS_PORT" +time=2 +tries=1 2>/dev/null
+            xargs -P$MAX_PARALLEL -I{} dig +short {} @"$DNS_SERVER" -p "$DNS_PORT" +time=$DNS_TIMEOUT +tries=1 2>/dev/null
         grep -E '^[0-9]' "$list_file" 2>/dev/null
     } | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | cut_local | \
         sort -u | sed "s/^/add $ipset_name /" | ipset restore -! 2>/dev/null
@@ -54,7 +52,7 @@ process_list() {
 # =============================================================================
 
 START_TIME=$(date +%s)
-echo "🚀 Запуск (параллельно: $MAX_PARALLEL)"
+echo "🚀 Запуск (параллельно: $MAX_PARALLEL, таймаут: ${DNS_TIMEOUT}c)"
 
 process_list "unblocksh" "/opt/etc/unblock/shadowsocks.txt"
 process_list "unblocktor" "/opt/etc/unblock/tor.txt"
