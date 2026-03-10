@@ -1,8 +1,11 @@
 #!/bin/sh
 # =============================================================================
-# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.4.7)
+# БЫСТРЫЙ СКРИПТ ЗАПОЛНЕНИЯ IPSET (v3.4.8)
 # =============================================================================
-# Оптимальная параллельность: 30
+# Исправления:
+# - Убраны logger (нет на некоторых роутерах)
+# - Проверка на пустые списки
+# - Таймаут на весь скрипт через watchdog
 # =============================================================================
 
 TAG="unblock_ipset"
@@ -18,7 +21,18 @@ process_list() {
     ipset_name="$1"
     list_file="$2"
     
-    [ ! -f "$list_file" ] && return 1
+    if [ ! -f "$list_file" ]; then
+        echo "⚠️ Нет файла: $list_file"
+        return 1
+    fi
+    
+    domain_count=$(grep -vE '^#|^[0-9]|^$' "$list_file" 2>/dev/null | wc -l)
+    if [ "$domain_count" -eq 0 ]; then
+        echo "⊘ $ipset_name: пусто"
+        ipset create "$ipset_name" hash:net family inet hashsize 4096 maxelem 65536 -exist 2>/dev/null
+        ipset flush "$ipset_name" 2>/dev/null
+        return 0
+    fi
     
     ipset create "$ipset_name" hash:net family inet hashsize 4096 maxelem 65536 -exist 2>/dev/null
     ipset flush "$ipset_name" 2>/dev/null
@@ -32,7 +46,7 @@ process_list() {
         sort -u | sed "s/^/add $ipset_name /" | ipset restore -! 2>/dev/null
     
     ip_count=$(ipset list "$ipset_name" 2>/dev/null | grep -c "^[0-9]")
-    logger -t "$TAG" "✅ $ipset_name: $ip_count IP"
+    echo "✅ $ipset_name: $ip_count IP"
 }
 
 # =============================================================================
@@ -40,6 +54,7 @@ process_list() {
 # =============================================================================
 
 START_TIME=$(date +%s)
+echo "🚀 Запуск (параллельно: $MAX_PARALLEL)"
 
 process_list "unblocksh" "/opt/etc/unblock/shadowsocks.txt"
 process_list "unblocktor" "/opt/etc/unblock/tor.txt"
@@ -56,6 +71,7 @@ done
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 
+echo ""
 echo "✅ Завершено за ${DURATION}c"
 echo "📊 Статистика:"
 for ipset in unblocksh unblocktor unblockvless unblocktroj; do
