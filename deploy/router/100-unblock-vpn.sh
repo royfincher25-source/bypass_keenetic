@@ -4,14 +4,14 @@ TAG="100-unblock-vpn.sh"
 
 sleep 1
 vpn_services="IKE|SSTP|OpenVPN|Wireguard|VPNL2TP"
-vpn_check=$(curl -s localhost:79/rci/show/interface | grep -E "$vpn_services" | grep id | awk '{print $2}' | tr -d \", | uniq -u)
+vpn_check=$(curl -s localhost:79/rci/show/interface | grep -E "$vpn_services" | grep id | awk '{print $2}' | tr -d ", | uniq -u")
 
 mkdir -p /opt/etc/iproute2
 touch /opt/etc/iproute2/rt_tables
 chmod 755 /opt/etc/iproute2/rt_tables
 
 for vpn in $vpn_check; do
-    if [ "$1" = "hook" ] && [ "$change" = "link" ] && [ "$id" = "$vpn" ]; then
+    if [ -n "$1" ] && [ "$1" = "hook" ] && [ -n "$change" ] && [ "$change" = "link" ] && [ -n "$id" ] && [ -n "$vpn" ] && [ "$id" = "$vpn" ]; then
         vpn_table=$(echo "$vpn" | tr [:upper:] [:lower:])
 
         if grep -q "$vpn_table" /opt/etc/iproute2/rt_tables; then
@@ -31,7 +31,7 @@ for vpn in $vpn_check; do
         sleep 1
         get_fwmark_id=$(grep "$vpn_table" /opt/etc/iproute2/rt_tables | awk '{print "0xd"$1}')
 
-        case ${id}-${change}-${connected}-${link}-${up} in
+        case "${id}-${change}-${connected}-${link}-${up}" in
             ${id}-link-no-down-down)
                 info=$(echo VPN "$vpn" OFF: правила обновлены)
                 logger -t "$TAG" "$info"

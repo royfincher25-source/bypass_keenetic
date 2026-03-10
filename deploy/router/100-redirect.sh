@@ -11,77 +11,33 @@ ip4t() {
 
 local_ip=$(ip -4 addr show br0 | awk '/inet /{print $2}' | cut -d/ -f1 | grep -E '^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)' | head -n1)
 
+RULES=$(iptables-save 2>/dev/null)
+IPSETS=$(ipset list -n 2>/dev/null)
+
 for protocol in udp tcp; do
-    if [ -z "$(iptables-save 2>/dev/null | grep "$protocol --dport 53 -j DNAT")" ]; then
+    if [ -z "$(echo "$RULES" | grep "$protocol --dport 53 -j DNAT")" ]; then
         iptables -I PREROUTING -w -t nat -p "$protocol" --dport 53 -j DNAT --to "$local_ip"
     fi
 done
 
-if [ -z "$(iptables-save 2>/dev/null | grep unblocksh)" ]; then
-    ipset create unblocksh hash:net -exist 2>/dev/null
-	
-    # Для работы на всех интерфейсах (br0, br1, sstp0, sstp2, etc)
-    iptables -I PREROUTING -w -t nat -p tcp -m set --match-set unblocksh dst -j REDIRECT --to-port 1082
-    iptables -I PREROUTING -w -t nat -p udp -m set --match-set unblocksh dst -j REDIRECT --to-port 1082
+add_redirect() {
+    name="$1"
+    port="$2"
 
-    # Если у вас другой конфиг dnsmasq, и вы слушаете только определенный ip, раскоментируйте следующие строки, поставьте свой ip
-    #iptables -I PREROUTING -w -t nat -p tcp -m set --match-set unblocksh dst --dport 53 -j DNAT --to 192.168.1.1
-    #iptables -I PREROUTING -w -t nat -p udp -m set --match-set unblocksh dst --dport 53 -j DNAT --to 192.168.1.1
+    if echo "$IPSETS" | grep -q "^${name}$"; then
+        [ -z "$(echo "$RULES" | grep "$name")" ] || return 0
+    else
+        ipset create "$name" hash:net -exist 2>/dev/null
+    fi
 
-    # Если вы хотите что бы обход работал только для определнных интерфейсов, закоментируйте строки выше, и раскоментируйте эти (br0)
-    #iptables -I PREROUTING -w -t nat -i br0 -p tcp -m set --match-set unblocksh dst -j REDIRECT --to-port 1082
-    #iptables -I PREROUTING -w -t nat -i br0 -p udp -m set --match-set unblocksh dst -j REDIRECT --to-port 1082
-    #iptables -I PREROUTING -w -t nat -i br0 -p tcp -m set --match-set unblocksh dst --dport 53 -j DNAT --to 192.168.1.1
-    #iptables -I PREROUTING -w -t nat -i br0 -p udp -m set --match-set unblocksh dst --dport 53 -j DNAT --to 192.168.1.1
+    iptables -I PREROUTING -w -t nat -p tcp -m set --match-set "$name" dst -j REDIRECT --to-port "$port"
+    iptables -I PREROUTING -w -t nat -p udp -m set --match-set "$name" dst -j REDIRECT --to-port "$port"
+}
 
-    # Если вы хотите что бы обход работал только для определённых интерфейсов, закоментируйте строки выше, и раскоментируйте эти (sstp0)
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p tcp -m set --match-set unblocksh dst -j REDIRECT --to-port 1082
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p udp -m set --match-set unblocksh dst -j REDIRECT --to-port 1082
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p tcp -m set --match-set unblocksh dst --dport 53 -j DNAT --to 192.168.1.1
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p udp -m set --match-set unblocksh dst --dport 53 -j DNAT --to 192.168.1.1
-fi
-
-if [ -z "$(iptables-save 2>/dev/null | grep unblocktor)" ]; then
-    ipset create unblocktor hash:net -exist 2>/dev/null
-    iptables -I PREROUTING -w -t nat -p tcp -m set --match-set unblocktor dst -j REDIRECT --to-port 9141
-    iptables -I PREROUTING -w -t nat -p udp -m set --match-set unblocktor dst -j REDIRECT --to-port 9141
-	
-    #iptables -I PREROUTING -w -t nat -i br0 -p tcp -m set --match-set unblocktor dst -j REDIRECT --to-port 9141
-    #iptables -I PREROUTING -w -t nat -i br0 -p udp -m set --match-set unblocktor dst -j REDIRECT --to-port 9141
-    #iptables -A PREROUTING -w -t nat -i br0 -p tcp -m set --match-set unblocktor dst -j REDIRECT --to-port 9141
-	
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p tcp -m set --match-set unblocktor dst -j REDIRECT --to-port 9141
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p udp -m set --match-set unblocktor dst -j REDIRECT --to-port 9141
-    #iptables -A PREROUTING -w -t nat -i sstp0 -p tcp -m set --match-set unblocktor dst -j REDIRECT --to-port 9141
-fi
-
-if [ -z "$(iptables-save 2>/dev/null | grep unblockvless)" ]; then
-    ipset create unblockvless hash:net -exist 2>/dev/null
-    iptables -I PREROUTING -w -t nat -p tcp -m set --match-set unblockvless dst -j REDIRECT --to-port 10810
-    iptables -I PREROUTING -w -t nat -p udp -m set --match-set unblockvless dst -j REDIRECT --to-port 10810
-	
-    #iptables -I PREROUTING -w -t nat -i br0 -p tcp -m set --match-set unblockvless dst -j REDIRECT --to-port 10810
-    #iptables -I PREROUTING -w -t nat -i br0 -p udp -m set --match-set unblockvless dst -j REDIRECT --to-port 10810
-    #iptables -A PREROUTING -w -t nat -i br0 -p tcp -m set --match-set unblockvless dst -j REDIRECT --to-port 10810
-	
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p tcp -m set --match-set unblockvless dst -j REDIRECT --to-port 10810
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p udp -m set --match-set unblockvless dst -j REDIRECT --to-port 10810
-    #iptables -A PREROUTING -w -t nat -i sstp0 -p tcp -m set --match-set unblockvless dst -j REDIRECT --to-port 10810
-fi
-
-if [ -z "$(iptables-save 2>/dev/null | grep unblocktroj)" ]; then
-    ipset create unblocktroj hash:net -exist 2>/dev/null
-    iptables -I PREROUTING -w -t nat -p tcp -m set --match-set unblocktroj dst -j REDIRECT --to-port 10829
-    iptables -I PREROUTING -w -t nat -p udp -m set --match-set unblocktroj dst -j REDIRECT --to-port 10829
-	
-    #iptables -I PREROUTING -w -t nat -i br0 -p tcp -m set --match-set unblocktroj dst -j REDIRECT --to-port 10829
-    #iptables -I PREROUTING -w -t nat -i br0 -p udp -m set --match-set unblocktroj dst -j REDIRECT --to-port 10829
-    #iptables -A PREROUTING -w -t nat -i br0 -p tcp -m set --match-set unblocktroj dst -j REDIRECT --to-port 10829
-	
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p tcp -m set --match-set unblocktroj dst -j REDIRECT --to-port 10829
-    #iptables -I PREROUTING -w -t nat -i sstp0 -p udp -m set --match-set unblocktroj dst -j REDIRECT --to-port 10829
-    #iptables -A PREROUTING -w -t nat -i sstp0 -p tcp -m set --match-set unblocktroj dst -j REDIRECT --to-port 10829
-fi
+add_redirect unblocksh 1082
+add_redirect unblocktor 9141
+add_redirect unblockvless 10810
+add_redirect unblocktroj 10829
 
 TAG="100-redirect.sh"
 
@@ -103,7 +59,7 @@ if ls -d /opt/etc/unblock/vpn-*.txt >/dev/null 2>&1; then
             fi
             vpn_mark_id=$(echo 0xd"$vpn_table_id")
 
-            if iptables-save 2>/dev/null | grep -q "$unblockvpn"; then
+            if echo "$RULES" | grep -q "$unblockvpn"; then
                 vpn_rule_ok=$(echo Правила для "$unblockvpn" уже есть.)
                 echo "$vpn_rule_ok"
             else
@@ -120,10 +76,6 @@ if ls -d /opt/etc/unblock/vpn-*.txt >/dev/null 2>&1; then
                     logger -t "$TAG" "$info"
                     iptables -A PREROUTING -w -t mangle -p tcp -m set --match-set "$unblockvpn" dst -j MARK --set-mark "$vpn_mark_id"
                     iptables -A PREROUTING -w -t mangle -p udp -m set --match-set "$unblockvpn" dst -j MARK --set-mark "$vpn_mark_id"
-
-                    # Закоментируйте правила выше и раскоментируйте эти, если хотите перенаправлять трафик только с интерфейса br0
-                    #iptables -I PREROUTING -w -t mangle -i br0 -p tcp -m set --match-set "$unblockvpn" dst -j MARK --set-mark "$vpn_mark_id"
-                    #iptables -I PREROUTING -w -t mangle -i br0 -p udp -m set --match-set "$unblockvpn" dst -j MARK --set-mark "$vpn_mark_id"
                 else
                     info=$(echo "VPN: fastnat, swnat и hwnat ВКЛЮЧЕНЫ, правила добавлены")
                     logger -t "$TAG" "$info"
