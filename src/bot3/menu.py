@@ -14,7 +14,7 @@ class Menu:
 
 class BackupState:
     __slots__ = ['startup_config', 'firmware', 'entware', 'custom_files',
-                 'selected_drive', 'delete_archive', 'selection_msg_id']
+                 'selected_drive', 'delete_archive', 'selection_msg_id', 'custom_backup_paths']
 
     def __init__(self):
         self.startup_config = True  # Выбрано по умолчанию
@@ -24,6 +24,8 @@ class BackupState:
         self.selected_drive = None
         self.delete_archive = False
         self.selection_msg_id = None
+        # Типовые пути для custom_files
+        self.custom_backup_paths = "/opt/etc/bot/config.json /opt/etc/xray/config.json /opt/root/script.sh"
 
     def get_selected_count(self):
         return sum([self.startup_config, self.firmware, self.entware, self.custom_files])

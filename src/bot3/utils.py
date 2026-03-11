@@ -1062,6 +1062,10 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         files_to_backup = []
         files_added = []
         
+        # Инициализация переменных для удаления папки
+        disk_uuid = selected_drive.get('uuid', '')
+        timestamp = time.strftime("%Y-%m-%d_%H-%M")
+        
         # Конфигурация (обязательно)
         if backup_state.startup_config:
             if os.path.exists("/opt/etc/bot"):
@@ -1111,9 +1115,9 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                         disk_uuid = str(uuid.uuid4())
                         log_error(f"Using generated UUID: {disk_uuid}")
                     
-                    # Получаем DEVICE_ID и FW_VERSION как в KeenSnap
-                    device_id = "KN-1212"  # Значение по умолчанию
-                    fw_version = "stable_4.03.C.6.3-9"  # Значение по умолчанию
+                    # Получаем DEVICE_ID и FW_VERSION
+                    device_id = "unknown"  # Значение по умолчанию
+                    fw_version = "unknown"  # Значение по умолчанию
                     try:
                         version_output = subprocess.check_output(
                             ["ndmc", "-c", "show version"],
@@ -1131,16 +1135,15 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     except Exception as e:
                         log_error(f"Failed to get device info: {e}")
                     
-                    # Сначала сохраняем в /tmp (системная память)
-                    # Используем просто /tmp без sys: префикса
-                    sys_destination = f"/tmp/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
-                    log_error(f"ndmc destination: {sys_destination}")
+                    # Создаем директорию для бэкапа (ndmc не создаёт её автоматически)
+                    backup_dir = f"/tmp/mnt/{disk_uuid}/backup{timestamp}"
+                    subprocess.run(["mkdir", "-p", backup_dir], capture_output=True)
                     
-                    # Создаём папку в /tmp
-                    try:
-                        subprocess.run(["mkdir", "-p", f"/tmp/backup{timestamp}"], check=True)
-                    except Exception as e:
-                        log_error(f"Failed to create directory: {e}")
+                    # Сохраняем напрямую на диск (ndmc не поддерживает /tmp)
+                    # Формат: UUID:/backup{timestamp}/filename
+                    sys_destination = f"{disk_uuid}:/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
+                    sys_destination_fs = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
+                    log_error(f"ndmc destination: {sys_destination}")
                     
                     result = subprocess.run(
                         ["ndmc", "-c", f"copy startup-config {sys_destination}"],
@@ -1148,19 +1151,9 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     )
                     log_error(f"ndmc copy startup-config: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                     if result.returncode == 0:
-                        # Копируем из /tmp на диск
-                        src_path = f"/tmp/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
-                        dst_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/{device_id}_{fw_version}_startup-config.txt"
-                        try:
-                            # Создаём папку на диске
-                            subprocess.run(["mkdir", "-p", f"/tmp/mnt/{disk_uuid}/backup{timestamp}"], check=True)
-                            # Копируем файл на диск
-                            subprocess.run(["cp", src_path, dst_path], check=True)
-                            files_to_backup.append(dst_path)
-                            files_added.append("startup-config.txt (ndmc)")
-                            log_error(f"Copied to disk: {dst_path}")
-                        except Exception as e:
-                            log_error(f"Failed to copy to disk: {e}")
+                        files_to_backup.append(sys_destination_fs)
+                        files_added.append("startup-config.txt (ndmc)")
+                        log_error(f"Saved to disk: {sys_destination}")
                     else:
                         log_error("Warning: startup-config ndmc failed, trying alternative paths")
                 except Exception as e:
@@ -1169,16 +1162,11 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             # Прошивка роутера (firmware.bin) — рабочий синтаксис из KeenSnap
             try:
                 # Рабочий синтаксис: copy flash:/firmware <destination>
-                # destination должен быть ПОЛНЫМ путём с именем файла!
-                timestamp = time.strftime("%Y-%m-%d_%H-%M")
-                disk_uuid = selected_drive.get('uuid', '')
-                if not disk_uuid:
-                    import uuid
-                    disk_uuid = str(uuid.uuid4())
+                # Формат: UUID:/backup{timestamp}/filename
                 
-                # Получаем DEVICE_ID и FW_VERSION как в KeenSnap
-                device_id = "KN-1212"
-                fw_version = "stable_4.03.C.6.3-9"
+                # Получаем DEVICE_ID и FW_VERSION
+                device_id = "unknown"
+                fw_version = "unknown"
                 try:
                     version_output = subprocess.check_output(
                         ["ndmc", "-c", "show version"],
@@ -1195,16 +1183,10 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 except Exception as e:
                     log_error(f"Failed to get device info: {e}")
                 
-                # Сначала сохраняем в /tmp (системная память)
-                # Используем просто /tmp без sys: префикса
-                sys_destination = f"/tmp/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
+                # Сохраняем напрямую на диск (ndmc не поддерживает /tmp)
+                sys_destination = f"{disk_uuid}:/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
+                sys_destination_fs = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
                 log_error(f"ndmc firmware destination: {sys_destination}")
-                
-                # Создаём папку в /tmp
-                try:
-                    subprocess.run(["mkdir", "-p", f"/tmp/backup{timestamp}"], check=True)
-                except Exception as e:
-                    log_error(f"Failed to create directory: {e}")
                 
                 result = subprocess.run(
                     ["ndmc", "-c", f"copy flash:/firmware {sys_destination}"],
@@ -1212,19 +1194,9 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 )
                 log_error(f"ndmc copy flash:/firmware: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
                 if result.returncode == 0:
-                    # Копируем из /tmp на диск
-                    src_path = f"/tmp/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
-                    dst_path = f"/tmp/mnt/{disk_uuid}/backup{timestamp}/{device_id}_{fw_version}_firmware.bin"
-                    try:
-                        # Создаём папку на диске
-                        subprocess.run(["mkdir", "-p", f"/tmp/mnt/{disk_uuid}/backup{timestamp}"], check=True)
-                        # Копируем файл на диск
-                        subprocess.run(["cp", src_path, dst_path], check=True)
-                        files_to_backup.append(dst_path)
-                        files_added.append("firmware.bin")
-                        log_error(f"Copied to disk: {dst_path}")
-                    except Exception as e:
-                        log_error(f"Failed to copy to disk: {e}")
+                    files_to_backup.append(sys_destination_fs)
+                    files_added.append("firmware.bin")
+                    log_error(f"Saved to disk: {sys_destination}")
                 else:
                     log_error("Warning: firmware ndmc failed")
             except Exception as e:
@@ -1232,6 +1204,41 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         
         # Entware
         if backup_state.entware:
+            # Сначала создаём директорию для бэкапа Entware
+            backup_dir = f"/tmp/mnt/{disk_uuid}/backup{timestamp}"
+            subprocess.run(["mkdir", "-p", backup_dir], capture_output=True)
+            
+            # Определяем архитектуру для имени файла
+            arch = "mipsel"  # По умолчанию для KN-1212
+            try:
+                arch_output = subprocess.check_output(["uname", "-m"], text=True).strip()
+                if "aarch64" in arch_output:
+                    arch = "aarch64"
+                elif "mips" in arch_output:
+                    arch = "mipsel"
+                elif "arm" in arch_output:
+                    arch = "aarch64"
+            except:
+                pass
+            
+            # Создаём mipsel-installer.tar.gz (полный бэкап Entware)
+            installer_path = f"{backup_dir}/{arch}-installer.tar.gz"
+            try:
+                log_error(f"Creating {arch}-installer.tar.gz from /opt...")
+                result = subprocess.run(
+                    ["tar", "-czf", installer_path, "-C", "/opt", "."],
+                    timeout=1800, capture_output=True, text=True
+                )
+                if result.returncode == 0 and os.path.exists(installer_path):
+                    files_to_backup.append(installer_path)
+                    files_added.append(f"{arch}-installer.tar.gz")
+                    log_error(f"Created {arch}-installer.tar.gz successfully")
+                else:
+                    log_error(f"Failed to create installer: {result.stderr}")
+            except Exception as e:
+                log_error(f"Error creating installer: {e}")
+            
+            # Добавляем отдельные файлы (дополнительно)
             if os.path.exists("/opt/root/KeenSnap"):
                 files_to_backup.append("/opt/root/KeenSnap")
                 files_added.append("KeenSnap")
@@ -1258,6 +1265,15 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                 files_to_backup.append("/opt/etc/dnsmasq.conf")
                 files_added.append("dnsmasq.conf")
         
+        # Другие файлы (custom_files)
+        if backup_state.custom_files:
+            custom_paths = getattr(backup_state, 'custom_backup_paths', '') or ''
+            if custom_paths:
+                for path in custom_paths.split():
+                    if os.path.exists(path):
+                        files_to_backup.append(path)
+                        files_added.append(os.path.basename(path))
+        
         # Логирование для отладки
         log_error(f"Backup files to add: {files_added}")
         log_error(f"Backup paths: {files_to_backup}")
@@ -1265,7 +1281,8 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         # Создание бэкапа
         if not files_to_backup:
             # Если ничего не выбрано или файлы не найдены
-            if backup_state.startup_config or backup_state.entware:
+            if backup_state.startup_config or backup_state.entware or backup_state.custom_files:
+                log_error(f"Warning: No files to backup. startup_config={backup_state.startup_config}, entware={backup_state.entware}, custom_files={backup_state.custom_files}")
                 raise Exception("Нет файлов для бэкапа. Проверьте, установлены ли компоненты.")
             elif backup_state.firmware:
                 # Если выбрана только прошивка, но она не сохранилась — предупреждение, но не ошибка
@@ -1306,6 +1323,14 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
 
         if os.path.exists(archive_path):
             file_size_mb = round(os.path.getsize(archive_path) / 1024 / 1024, 1)
+            
+            # Удаляем временную папку с файлами (оставляем только архив)
+            # ИСПОЛЬЗУЕМ ТОЧНЫЙ ПУТЬ, а не files_to_backup[0] (мог удалить не то)
+            if disk_uuid and timestamp:
+                backup_dir = f"/tmp/mnt/{disk_uuid}/backup{timestamp}"
+                if os.path.isdir(backup_dir):
+                    subprocess.run(["rm", "-rf", backup_dir], capture_output=True)
+                    log_error(f"Deleted temp folder: {backup_dir}")
             
             if file_size_mb < 0.5:
                 log_error(f"Warning: Backup size too small: {file_size_mb} MB, files: {files_added}")
