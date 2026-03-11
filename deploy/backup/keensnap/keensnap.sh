@@ -109,11 +109,11 @@ backup_firmware() {
 backup_entware() {
     local item_name="Entware"
     local backup_file="$SELECTED_DRIVE/${DEVICE_ID}_${date}_entware.tar.gz"
-    
+
     # Создаём файл исключений
     local exclude_file=$(mktemp)
     trap "rm -f '$exclude_file'" EXIT
-    
+
     # Исключаем: текущий бэкап, старые бэкапы, кеш, логи, временные файлы
     cat > "$exclude_file" << EOF
 $backup_file
@@ -123,19 +123,42 @@ var/log/*.log
 var/log/*.gz
 tmp/*
 EOF
-    
+
     # Считаем размер только тех файлов, которые будут заархивированы
     local source_size_kb=$(du -s --exclude='root/KeenSnap/*.tar.gz' --exclude='var/cache/*' --exclude='var/log/*.log' --exclude='var/log/*.gz' --exclude='tmp/*' /opt 2>/dev/null | awk '{print $1}')
     [ -z "$source_size_kb" ] && source_size_kb=$(du -s /opt | awk '{print $1}')
-    
+
     check_free_space "$source_size_kb" "$item_name" 1 || return 1
     progress "Создаю бэкап $item_name в $backup_file"
-    
+
     if ! tar czf "$backup_file" -X "$exclude_file" -C /opt . 2>>"$LOG_FILE"; then
         error "Ошибка при сохранении $item_name"
         return 1
     fi
-    progress "Бэкап $item_name завершён"
+
+    # ✅ ПРОВЕРКА ВАЛИДНОСТИ АРХИВА
+    # Проверяем, что архив содержит критичные директории
+    local has_bin=0
+    local has_etc=0
+    local has_lib=0
+
+    tar tzf "$backup_file" 2>/dev/null | grep -q "^bin/" && has_bin=1
+    tar tzf "$backup_file" 2>/dev/null | grep -q "^etc/" && has_etc=1
+    tar tzf "$backup_file" 2>/dev/null | grep -q "^lib/" && has_lib=1
+
+    if [ "$has_bin" -eq 0 ] || [ "$has_etc" -eq 0 ] || [ "$has_lib" -eq 0 ]; then
+        error "Архив не содержит критичные директории (bin: $has_bin, etc: $has_etc, lib: $has_lib)"
+        return 1
+    fi
+
+    # Проверяем размер архива (не должен быть пустым)
+    local archive_size=$(wc -c < "$backup_file" 2>/dev/null)
+    if [ "$archive_size" -lt 1024 ]; then
+        error "Архив слишком маленький: $archive_size байт (возможно, повреждён)"
+        return 1
+    fi
+
+    progress "Бэкап $item_name завершён (проверено: bin, etc, lib)"
     return 0
 }
 
