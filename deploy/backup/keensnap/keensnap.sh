@@ -109,12 +109,28 @@ backup_firmware() {
 backup_entware() {
     local item_name="Entware"
     local backup_file="$SELECTED_DRIVE/${DEVICE_ID}_${date}_entware.tar.gz"
-    local source_size_kb=$(du -s /opt | awk '{print $1}')
-    check_free_space "$source_size_kb" "$item_name" 1 || return 1
-    progress "Создаю бэкап $item_name в $backup_file"
+    
+    # Создаём файл исключений
     local exclude_file=$(mktemp)
     trap "rm -f '$exclude_file'" EXIT
-    echo "$backup_file" > "$exclude_file"
+    
+    # Исключаем: текущий бэкап, старые бэкапы, кеш, логи, временные файлы
+    cat > "$exclude_file" << EOF
+$backup_file
+root/KeenSnap/*.tar.gz
+var/cache/*
+var/log/*.log
+var/log/*.gz
+tmp/*
+EOF
+    
+    # Считаем размер только тех файлов, которые будут заархивированы
+    local source_size_kb=$(du -s --exclude='root/KeenSnap/*.tar.gz' --exclude='var/cache/*' --exclude='var/log/*.log' --exclude='var/log/*.gz' --exclude='tmp/*' /opt 2>/dev/null | awk '{print $1}')
+    [ -z "$source_size_kb" ] && source_size_kb=$(du -s /opt | awk '{print $1}')
+    
+    check_free_space "$source_size_kb" "$item_name" 1 || return 1
+    progress "Создаю бэкап $item_name в $backup_file"
+    
     if ! tar czf "$backup_file" -X "$exclude_file" -C /opt . 2>>"$LOG_FILE"; then
         error "Ошибка при сохранении $item_name"
         return 1

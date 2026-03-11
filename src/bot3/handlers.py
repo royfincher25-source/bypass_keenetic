@@ -805,7 +805,19 @@ def setup_handlers(bot):
         if not selected_drive:
             bot.answer_callback_query(call.id, "❌ Выбранный диск недоступен", show_alert=True)
             return
+
+        # Проверяем наличие keensnap.sh перед запуском бэкапа
+        from core.backup import ensure_keensnap_exists
+        keensnap_path = "/opt/root/KeenSnap/keensnap.sh"
+        keensnap_url = f"{config.base_url}/deploy/backup/keensnap/keensnap.sh"
         
+        try:
+            ensure_keensnap_exists(keensnap_path, keensnap_url)
+        except FileNotFoundError as e:
+            bot.answer_callback_query(call.id, str(e), show_alert=True)
+            log_error(str(e))
+            return
+
         # Сразу создаём бэкап без дополнительных вопросов
         progress_msg = bot.send_message(call.message.chat.id, "⏳ Создание архива бэкапа, подождите...")
         create_backup_with_params(bot, call.message.chat.id, state.backup_state, selected_drive, progress_msg.message_id)

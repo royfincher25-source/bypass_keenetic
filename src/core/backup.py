@@ -9,6 +9,55 @@ import subprocess
 import time
 
 
+def download_script(url, path):
+    """
+    Загрузка скрипта по URL.
+    
+    Args:
+        url (str): URL для загрузки
+        path (str): Путь для сохранения
+    """
+    import requests
+    try:
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w') as f:
+            f.write(response.text)
+        os.chmod(path, 0o755)
+        return True
+    except Exception:
+        return False
+
+
+def ensure_keensnap_exists(keensnap_path, keensnap_url):
+    """
+    Проверка существования keensnap.sh и автозагрузка при отсутствии.
+    
+    Args:
+        keensnap_path (str): Путь к скрипту
+        keensnap_url (str): URL для загрузки
+        
+    Returns:
+        bool: True если скрипт существует или загружен
+        
+    Raises:
+        FileNotFoundError: Если скрипт не найден и не удалось загрузить
+    """
+    if os.path.exists(keensnap_path):
+        return True
+    
+    # Пытаемся загрузить автоматически
+    if download_script(keensnap_url, keensnap_path):
+        return True
+    
+    raise FileNotFoundError(
+        f"KeenSnap скрипт не найден: {keensnap_path}\n"
+        f"URL: {keensnap_url}\n"
+        f"Загрузите скрипт вручную или проверьте подключение к интернету"
+    )
+
+
 def get_available_drives():
     """
     Получение списка доступных дисков для бэкапа.
@@ -65,10 +114,11 @@ def get_available_drives():
 
 def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progress_msg_id,
                                keensnap_path="/opt/root/KeenSnap/keensnap.sh",
+                               keensnap_url=None,
                                max_size_mb=45):
     """
     Создание бэкапа с параметрами.
-    
+
     Args:
         bot: TeleBot объект
         chat_id (int): ID чата для уведомлений
@@ -76,16 +126,33 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         selected_drive (dict): Информация о выбранном диске
         progress_msg_id (int): ID сообщения с прогрессом
         keensnap_path (str): Путь к скрипту KeenSnap
+        keensnap_url (str): URL для загрузки скрипта (если нужен)
         max_size_mb (int): Максимальный размер бэкапа в MB
-    
+
     Returns:
         None
     """
     from .logging import log_error
-    
+
     archive_path = None
     max_size = max_size_mb * 1024 * 1024
     
+    # URL по умолчанию для автозагрузки
+    if keensnap_url is None:
+        keensnap_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/deploy/backup/keensnap/keensnap.sh"
+
+    # Проверяем существование keensnap.sh и загружаем при необходимости
+    try:
+        ensure_keensnap_exists(keensnap_path, keensnap_url)
+    except FileNotFoundError as e:
+        bot.edit_message_text(
+            f"❌ {str(e)}",
+            chat_id,
+            progress_msg_id
+        )
+        log_error(str(e))
+        return
+
     params = {
         "LOG_FILE": "/opt/root/KeenSnap/backup.log",
         "SELECTED_DRIVE": selected_drive["path"],
@@ -94,13 +161,13 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
         "BACKUP_ENTWARE": str(getattr(backup_state, 'entware', False)).lower(),
         "BACKUP_CUSTOM_FILES": str(getattr(backup_state, 'custom_files', False)).lower()
     }
-    
+
     args = [keensnap_path]
     args.extend([f"{k}={v}" for k, v in params.items()])
-    
+
     if getattr(backup_state, 'custom_files', False) and hasattr(backup_state, 'custom_backup_paths'):
         args.append(f"CUSTOM_BACKUP_PATHS={backup_state.custom_backup_paths}")
-    
+
     try:
         process = subprocess.Popen(
             args,
@@ -109,18 +176,19 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
             text=True,
             bufsize=1
         )
-        
+
         final_result = None
-        
+        stderr_output = []
+
         for line in process.stdout:
             line = line.strip()
             if not line:
                 continue
-            
+
             try:
                 import json
                 data = json.loads(line)
-                
+
                 if data.get("type") == "progress":
                     bot.edit_message_text(
                         f"⏳ {data['message']}",
@@ -129,10 +197,17 @@ def create_backup_with_params(bot, chat_id, backup_state, selected_drive, progre
                     )
                 elif "status" in data:
                     final_result = data
-                    
+
             except (json.JSONDecodeError, ValueError):
                 continue
-        
+
+        # Читаем stderr и логируем ошибки
+        stderr_output = process.stderr.read()
+        if stderr_output:
+            for error_line in stderr_output.strip().split('\n'):
+                if error_line:
+                    log_error(f"KeenSnap stderr: {error_line}")
+
         process.wait(timeout=900)  # 15 минут таймаут
         
         if final_result and final_result["status"] == "success":
