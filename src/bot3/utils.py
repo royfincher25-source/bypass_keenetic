@@ -227,8 +227,10 @@ def download_bot_files():
     version_loaded = False
 
     # ✅ Загружаем version.md ПЕРВЫМ (критично для проверки версии)
+    # Добавляем timestamp для сброса кэша GitHub
     try:
-        url = f"{config.bot_url}/version.md"
+        timestamp = int(time.time())
+        url = f"{config.bot_url}/version.md?t={timestamp}"
         local_path = os.path.join(bot_dir, 'version.md')
         response = get_http_session().get(url, timeout=30, stream=True)
         response.raise_for_status()
@@ -242,10 +244,11 @@ def download_bot_files():
         log_error(error_msg)
         raise Exception(error_msg)  # ✅ Прерываем обновление если version.md не загрузился
 
-    # Загрузка основных файлов бота
+    # Загрузка основных файлов бота (с сбросом кэша GitHub)
     for filename in bot_files:
         try:
-            url = f"{config.bot_url}/{filename}"
+            timestamp = int(time.time())
+            url = f"{config.bot_url}/{filename}?t={timestamp}"
             local_path = os.path.join(bot_dir, filename)
             response = get_http_session().get(url, timeout=30, stream=True)
             response.raise_for_status()
@@ -256,11 +259,12 @@ def download_bot_files():
             error_msg = f"Ошибка при загрузке {filename}: {str(e)}"
             log_error(error_msg)
             errors.append(error_msg)
-    
-    # Загрузка core модулей
+
+    # Загрузка core модулей (с сбросом кэша GitHub)
     for filename in core_files:
         try:
-            url = f"{config.base_url}/src/core/{filename}"
+            timestamp = int(time.time())
+            url = f"{config.base_url}/src/core/{filename}?t={timestamp}"
             local_path = os.path.join(core_dir, filename)
             # Создаём директорию core если не существует
             if not os.path.exists(core_dir):
@@ -274,11 +278,12 @@ def download_bot_files():
             error_msg = f"Ошибка при загрузке core/{filename}: {str(e)}"
             log_error(error_msg)
             errors.append(error_msg)
-    
-    # Загрузка init скриптов
+
+    # Загрузка init скриптов (с сбросом кэша GitHub)
     for script_name in init_scripts:
         try:
-            url = f"{config.bot_url}/{script_name}"
+            timestamp = int(time.time())
+            url = f"{config.bot_url}/{script_name}?t={timestamp}"
             local_path = os.path.join(bot_dir, script_name)
             response = get_http_session().get(url, timeout=30, stream=True)
             response.raise_for_status()
