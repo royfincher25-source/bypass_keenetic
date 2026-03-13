@@ -187,8 +187,8 @@ if [ "$1" = "-install" ]; then
     # Создание unblock папки и файлов
     mkdir -p "$UNBLOCK_DIR"
     # если не нужны списки с git строки ниже можно закомментировать, если нужны - оставить
-    curl -s -o "${UNBLOCK_DIR}vless.txt" "$BASE_URL/unblockvless.txt"
-    curl -s -o "${UNBLOCK_DIR}tor.txt" "$BASE_URL/unblocktor.txt"
+    curl -s -o "${UNBLOCK_DIR}vless.txt" "$BASE_URL/deploy/lists/unblockvless.txt"
+    curl -s -o "${UNBLOCK_DIR}tor.txt" "$BASE_URL/deploy/lists/unblocktor.txt"
     # Создание пустых файлов если их нет, команда touch не изменит содержимое файлов, если они есть, изменится только метка времени
     for file in \
         "$HOSTS_FILE" \
