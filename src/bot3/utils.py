@@ -227,10 +227,10 @@ def download_bot_files():
     version_loaded = False
 
     # ✅ Загружаем version.md ПЕРВЫМ (критично для проверки версии)
-    # Добавляем timestamp для сброса кэша GitHub
+    # version.md находится в корне репозитория (не в src/bot3/)
     try:
         timestamp = int(time.time())
-        url = f"{config.bot_url}/version.md?t={timestamp}"
+        url = f"{config.base_url}/version.md?t={timestamp}"
         local_path = os.path.join(bot_dir, 'version.md')
         response = get_http_session().get(url, timeout=30, stream=True)
         response.raise_for_status()

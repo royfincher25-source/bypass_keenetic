@@ -136,7 +136,8 @@ services = {
 # URLs
 # =============================================================================
 base_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main"
-bot_url = f"{base_url}/src/bot3"
+bot_url = f"{base_url}/src/bot3"  # Для загрузки файлов бота
+# version.md загружается из base_url (корень репозитория)!
 
 # =============================================================================
 # BACKUP SETTINGS

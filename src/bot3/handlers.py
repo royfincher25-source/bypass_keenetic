@@ -241,9 +241,9 @@ def setup_handlers(bot):
                 'If-None-Match': '',  # Сброс ETag
                 'If-Modified-Since': '0'  # Сброс Last-Modified
             }
-            # Если bot_url не указан, используем базовый URL
+            # Если bot_url не указан, используем базовый URL (version.md в корне!)
             if bot_url is None:
-                bot_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3"
+                bot_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main"
             # Добавляем timestamp и random для уникальности URL
             url = f"{bot_url}/version.md?t={int(time.time())}&r={os.urandom(4).hex()}"
             log_error(f"🌐 Запрос версии: {url}")
