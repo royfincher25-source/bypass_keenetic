@@ -18,23 +18,6 @@
 >
 > ***Реализация сделана исключительно для себя, в научно-технических целях. Т.к. пишу и тестирую сам, то возможно мне удается проверить не все возможные сценарии использования. Если Вы решите использовать эти скрипты/бота в своей системе, Вы делаете это полностью на свой страх и риск. Я не несу никакой ответственности за любые прямые или косвенные последствия их использования. Вся ответственность за любые результаты, проблемы или ущерб, возникшие в результате использования, ложится исключительно на Вас. Перед использованием убедительно рекомендуется внимательно изучить код и адаптировать его под свои нужды и условия. При найденных проблемах создавайте Issue. Также для обсуждения открыт функционал Discussions***
 
-## Скриншоты
-| Главное меню | Ключи и мосты | Списки обхода | Установка и удаление |
-|--------------|---------------|---------------|----------------------|
-| ![Главное меню](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/MENU_MAIN.png) | ![Ключи и мосты](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/MENU_VLESS.png) | ![Списки обхода](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/MENU_BYPASS_FILES.png) | ![Установка и удаление](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/install_remove_menu.png) |
-
----
-
-| Сервисное меню | Обновлений нет | Обновления | DNS Override |
-|----------------|------------|------------------------|--------------|
-| ![Сервисное меню](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/MENU_SERVICE.png) | ![Обновления](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/updates_menu.png) | ![Обновления (состояние)](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/updates_menu(need_update).png) | ![DNS Override](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/dns_override_menu.png) |
-
----
-
-| Бекап меню | Создать бекап | Выбор диска | Удаление архива | Бекап завершен |
-|------------|---------------|-------------|-----------------|----------------|
-| ![Бекап меню](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/backup_menu.png) | ![Создать бекап](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/backup_menu(backup_state).png) | ![Выбор диска](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/drive_selection_menu.png) | ![Удаление архива](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/delete_archive_menu.png) | ![Бекап завершен](https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/screens/backup_done.png) |
-
 ## Установка
 
 1) Подготавливаем USB-накопитель по [инструкции](https://help.keenetic.com/hc/ru/articles/360000184259-%D0%9A%D0%B0%D0%BA-%D0%BF%D0%BE%D0%B4%D0%B3%D0%BE%D1%82%D0%BE%D0%B2%D0%B8%D1%82%D1%8C-USB-%D0%BD%D0%B0%D0%BA%D0%BE%D0%BF%D0%B8%D1%82%D0%B5%D0%BB%D1%8C-%D0%B4%D0%BB%D1%8F-%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F-%D0%B2-%D0%BA%D0%B0%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%B5-%D1%85%D1%80%D0%B0%D0%BD%D0%B8%D0%BB%D0%B8%D1%89%D0%B0-%D0%B8-%D0%BE%D0%B4%D0%BD%D0%BE%D0%B2%D1%80%D0%B5%D0%BC%D0%B5%D0%BD%D0%BD%D0%BE-%D1%80%D0%B0%D1%81%D1%88%D0%B8%D1%80%D0%B5%D0%BD%D0%B8%D1%8F-%D0%BE%D0%B1%D1%8A%D0%B5%D0%BC%D0%B0-%D0%BE%D0%BF%D0%B5%D1%80%D0%B0%D1%82%D0%B8%D0%B2%D0%BD%D0%BE%D0%B9-%D0%BF%D0%B0%D0%BC%D1%8F%D1%82%D0%B8-%D0%B8%D0%BD%D1%82%D0%B5%D1%80%D0%BD%D0%B5%D1%82-%D1%86%D0%B5%D0%BD%D1%82%D1%80%D0%B0). В качестве USB-накопителя рекомендую использовать жесткий диск, а не флеш-накопитель

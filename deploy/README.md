@@ -1,7 +1,7 @@
 # 🚀 Production файлы для развёртывания
 
-**Версия:** 3.4.2  
-**Дата:** 9 марта 2026 г.
+**Версия:** 3.5.51
+**Дата:** 13 марта 2026 г.
 
 ---
 
@@ -19,8 +19,6 @@ deploy/
 │   └── unblock_update.sh
 │
 ├── backup/              # Скрипты бэкапа
-│   ├── backup_config.sh
-│   ├── cleanup_backups.sh
 │   └── keensnap/
 │       └── keensnap.sh
 │
@@ -32,9 +30,16 @@ deploy/
 │   ├── trojan_template.json
 │   └── vless_template.json
 │
-└── lists/               # Списки обхода
-    ├── unblocktor.txt
-    └── unblockvless.txt
+├── lists/               # Списки обхода
+│   ├── unblock-shadowsocks-optimal.txt
+│   ├── unblock-shadowsocks-template.txt
+│   ├── unblock-youtube.txt
+│   ├── unblocktor.txt
+│   └── unblockvless.txt
+│
+└── archive/             # Архив (устаревшие скрипты)
+    ├── backup_config.sh
+    └── cleanup_backups.sh
 ```
 
 ---
@@ -67,22 +72,24 @@ ssh admin@192.168.1.1 "chmod +x /opt/bin/unblock_*.sh"
 
 ---
 
-### 💾 backup/ - Скрипты резервного копирования
+### 💾 backup/ - Скрипты бэкапирования
 
 | Скрипт | Назначение | Использование |
 |--------|------------|---------------|
-| **backup_config.sh** | Полное бэкапирование конфигурации | По расписанию или вручную |
-| **cleanup_backups.sh** | Очистка старых бэкапов | По расписанию (cron) |
-| **keensnap/keensnap.sh** | Бэкап через Telegram бота | Через Telegram бота |
+| **keensnap/keensnap.sh** | Бэкап через Telegram бота | Через меню бота `💾 Бэкап` |
 
 **Использование:**
 ```bash
-# Создать бэкап вручную
-/opt/root/KeenSnap/keensnap.sh
+# Создать бэкап через Telegram бота
+# Меню: ⚙️ Сервис → 💾 Бэкап
 
-# Настроить очистку (crontab)
-0 3 * * * /opt/etc/bot/cleanup_backups.sh
+# Или вручную на роутере:
+/opt/root/KeenSnap/keensnap.sh LOG_FILE=/opt/root/KeenSnap/backup.log SELECTED_DRIVE=/tmp/mnt/USB_DISK BACKUP_STARTUP_CONFIG=true BACKUP_ENTWARE=true
 ```
+
+**Архивные скрипты** (не используются, перемещены в `archive/`):
+- `backup_config.sh` — альтернативное бэкапирование
+- `cleanup_backups.sh` — альтернативная очистка
 
 ---
 
