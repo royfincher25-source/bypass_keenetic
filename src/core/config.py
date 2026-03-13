@@ -65,7 +65,12 @@ class Config:
         
         # Backup
         self.backup_max_size_mb = get_env_int('BACKUP_MAX_SIZE_MB', 45)
-        
+
+        # Services
+        self.services = {
+            'service_script': '/opt/etc/init.d/S99telegram_bot',
+        }
+
         Config._initialized = True
     
     @property
