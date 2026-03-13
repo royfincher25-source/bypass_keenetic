@@ -138,5 +138,7 @@ KN-1212_*/
 KN-1212_*/**/*
 backup*/
 backup*/**/*
+!deploy/backup/
+!deploy/backup/**/*
 
 dell*

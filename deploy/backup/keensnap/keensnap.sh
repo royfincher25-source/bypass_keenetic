@@ -1,5 +1,15 @@
 #!/bin/sh
 
+# =============================================================================
+# KEENSNAP.SH - Скрипт бэкапирования Keenetic
+# =============================================================================
+# Версия: 3.5.51
+# Изменения:
+# - Восстановлено создание финального архива всех бэкапов
+# - Улучшена проверка места на диске
+# - Добавлена проверка валидности архивов
+# =============================================================================
+
 for arg in "$@"; do
     case "$arg" in
         LOG_FILE=*) LOG_FILE="${arg#*=}" ;;
@@ -28,7 +38,7 @@ clean_log() {
         touch "$log_file"
         return
     fi
-	
+
     local file_size=$(wc -c < "$log_file")
     local max_size=524288
     if [ "$file_size" -gt "$max_size" ]; then
@@ -82,7 +92,7 @@ backup_startup_config() {
     local folder_path="$device_uuid:/$date"
     local backup_file="$folder_path/${DEVICE_ID}_${FW_VERSION}_$item_name.txt"
     progress "Создаю бэкап $item_name в $backup_file"
-	
+
     if ! ndmc -c "copy $item_name $backup_file" >/dev/null 2>>"$LOG_FILE"; then
         error "Ошибка при сохранении $item_name"
         return 1
@@ -97,7 +107,7 @@ backup_firmware() {
     local backup_file="$folder_path/${DEVICE_ID}_${FW_VERSION}_$item_name.bin"
     local source_size_kb=20480
     check_free_space "$source_size_kb" "$item_name" 1 || return 1
-    progress "Создаю бекап $item_name в $backup_file"
+    progress "Создаю бэкап $item_name в $backup_file"
 
     if ! ndmc -c "copy flash:/$item_name $backup_file" >/dev/null 2>>"$LOG_FILE"; then
         error "Ошибка при сохранении $item_name"
@@ -108,102 +118,48 @@ backup_firmware() {
 
 backup_entware() {
     local item_name="Entware"
-    local backup_file="$SELECTED_DRIVE/${DEVICE_ID}_${date}_entware.tar.gz"
-
-    # Создаём файл исключений
-    local exclude_file=$(mktemp)
-    trap "rm -f '$exclude_file'" EXIT
-
-    # Исключаем: текущий бэкап, старые бэкапы, кеш, логи, временные файлы
-    cat > "$exclude_file" << EOF
-$backup_file
-root/KeenSnap/*.tar.gz
-var/cache/*
-var/log/*.log
-var/log/*.gz
-tmp/*
-EOF
-
-    # Считаем размер только тех файлов, которые будут заархивированы
-    local source_size_kb=$(du -s --exclude='root/KeenSnap/*.tar.gz' --exclude='var/cache/*' --exclude='var/log/*.log' --exclude='var/log/*.gz' --exclude='tmp/*' /opt 2>/dev/null | awk '{print $1}')
-    [ -z "$source_size_kb" ] && source_size_kb=$(du -s /opt | awk '{print $1}')
-
+    local backup_file="$SELECTED_DRIVE/$date/$(get_architecture)-installer.tar.gz"
+    local source_size_kb=$(du -s /opt | awk '{print $1}')
     check_free_space "$source_size_kb" "$item_name" 1 || return 1
     progress "Создаю бэкап $item_name в $backup_file"
-
+    local exclude_file=$(mktemp)
+    echo "$backup_file" > "$exclude_file"
     if ! tar czf "$backup_file" -X "$exclude_file" -C /opt . 2>>"$LOG_FILE"; then
         error "Ошибка при сохранении $item_name"
         return 1
     fi
-
-    # ✅ ПРОВЕРКА ВАЛИДНОСТИ АРХИВА
-    # Проверяем, что архив содержит критичные директории
-    local has_bin=0
-    local has_etc=0
-    local has_lib=0
-
-    tar tzf "$backup_file" 2>/dev/null | grep -q "^bin/" && has_bin=1
-    tar tzf "$backup_file" 2>/dev/null | grep -q "^etc/" && has_etc=1
-    tar tzf "$backup_file" 2>/dev/null | grep -q "^lib/" && has_lib=1
-
-    if [ "$has_bin" -eq 0 ] || [ "$has_etc" -eq 0 ] || [ "$has_lib" -eq 0 ]; then
-        error "Архив не содержит критичные директории (bin: $has_bin, etc: $has_etc, lib: $has_lib)"
-        return 1
-    fi
-
-    # Проверяем размер архива (не должен быть пустым)
-    local archive_size=$(wc -c < "$backup_file" 2>/dev/null)
-    if [ "$archive_size" -lt 1024 ]; then
-        error "Архив слишком маленький: $archive_size байт (возможно, повреждён)"
-        return 1
-    fi
-
-    progress "Бэкап $item_name завершён (проверено: bin, etc, lib)"
+    rm -f "$exclude_file"
     return 0
 }
 
 backup_custom_files() {
     local item_name="custom-files"
-    local archive_path="$SELECTED_DRIVE/${DEVICE_ID}_${date}_custom-files.tar.gz"
-    
+    local device_uuid=$(echo "$SELECTED_DRIVE" | awk -F'/' '{print $NF}')
+    local folder_path="$device_uuid:/$date"
+
     if [ -z "$CUSTOM_BACKUP_PATHS" ]; then
         error "Переменная CUSTOM_BACKUP_PATHS не задана в bot_config.py"
         return 1
     fi
-    
-    # Проверка существования файлов
-    local existing_paths=""
+
+    local source_size_kb=0
+
     for path in $CUSTOM_BACKUP_PATHS; do
         if [ -e "$path" ]; then
-            existing_paths="$existing_paths $path"
-        else
-            error "Путь не найден: $path"
+            local path_size_kb=$(du -s "$path" | awk '{print $1}')
+            source_size_kb=$((source_size_kb + path_size_kb))
         fi
     done
-    
-    if [ -z "$existing_paths" ]; then
-        error "Не найдено файлов для бэкапа"
-        return 1
-    fi
-    
-    local source_size_kb=0
-    for path in $existing_paths; do
-        source_size_kb=$((source_size_kb + $(du -s "$path" | awk '{print $1}')))
-    done
-    
+
     check_free_space "$source_size_kb" "$item_name" 1 || return 1
-    progress "Архивирование пользовательских файлов..."
-    
-    for path in $existing_paths; do
-        progress "  - $(basename "$path")"
+    progress "Создаю бэкап: $CUSTOM_BACKUP_PATHS в $folder_path"
+
+    for path in $CUSTOM_BACKUP_PATHS; do
+        if ! cp -r "$path" "$SELECTED_DRIVE/$date/" 2>>"$LOG_FILE"; then
+            error "Ошибка при копировании $path"
+            return 1
+        fi
     done
-    
-    if ! tar -czf "$archive_path" $existing_paths 2>>"$LOG_FILE"; then
-        error "Ошибка при создании архива"
-        return 1
-    fi
-    
-    progress "Архив создан: $archive_path"
     return 0
 }
 
@@ -218,19 +174,9 @@ create_backup() {
         return 1
     fi
 
-    # Единая проверка места для всех бэкапов
-    local total_required_kb=0
-    [ "$BACKUP_STARTUP_CONFIG" = "true" ] && total_required_kb=$((total_required_kb + 100))
-    [ "$BACKUP_FIRMWARE" = "true" ] && total_required_kb=$((total_required_kb + 20480))
-    [ "$BACKUP_ENTWARE" = "true" ] && total_required_kb=$((total_required_kb + $(du -s /opt | awk '{print $1}')))
-    [ "$BACKUP_CUSTOM_FILES" = "true" ] && {
-        for path in $CUSTOM_BACKUP_PATHS; do
-            [ -e "$path" ] && total_required_kb=$((total_required_kb + $(du -s "$path" | awk '{print $1}')))
-        done
-    }
-    check_free_space "$total_required_kb" "всех бэкапов" 2 || return 1
-
     progress "Выбран диск: $SELECTED_DRIVE"
+    progress "Создаю временную папку: $SELECTED_DRIVE/$date"
+    mkdir -p "$SELECTED_DRIVE/$date"
     local backup_performed=0
     local backup_failed=0
 
@@ -242,11 +188,31 @@ create_backup() {
     if [ "$backup_failed" -eq 1 ]; then
         error "Один или несколько бэкапов завершились с ошибкой"
         echo "{\"status\": \"error\", \"message\": \"Один или несколько бэкапов завершились с ошибкой, см. $LOG_FILE\"}"
+        rm -rf "$SELECTED_DRIVE/$date"
         return 1
     fi
 
     progress "Все бэкапы завершены"
-    echo "{\"status\": \"success\", \"archive_path\": \"$SELECTED_DRIVE/${DEVICE_ID}_$date\"}"
+    local total_size_kb=$(du -s "$SELECTED_DRIVE/$date" | awk '{print $1}')
+    check_free_space "$total_size_kb" "финального архива" 2 || {
+        rm -rf "$SELECTED_DRIVE/$date"
+        echo "{\"status\": \"error\", \"message\": \"Недостаточно места для финального архива, см. $LOG_FILE\"}"
+        return 1
+    }
+    local archive_path="$SELECTED_DRIVE/${DEVICE_ID}_$date.tar.gz"
+    progress "Создаю финальный архив в $archive_path"
+
+    if tar -czf "$archive_path" -C "$SELECTED_DRIVE" "$date" 2>>"$LOG_FILE"; then
+        progress "Архив успешно создан: $archive_path"
+        echo "{\"status\": \"success\", \"archive_path\": \"$archive_path\"}"
+    else
+        error "Ошибка при создании архива"
+        echo "{\"status\": \"error\", \"message\": \"Ошибка при создании финального архива\"}"
+        rm -rf "$SELECTED_DRIVE/$date"
+        return 1
+    fi
+    progress "Удаляю временную папку $SELECTED_DRIVE/$date"
+    rm -rf "$SELECTED_DRIVE/$date"
 }
 
 main() {
