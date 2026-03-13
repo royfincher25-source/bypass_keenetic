@@ -227,7 +227,53 @@ if [ "$1" = "-install" ]; then
     chmod 755 "$INIT_BOT" || chmod +x "$INIT_BOT"
     echo "Установлен cкрипт автоматического запуска бота при загрузке маршрутизатора"
 
-    # Установка скрипта перенаправления
+    # ✅ Создание директорий (критично если директории не существуют!)
+    mkdir -p "$BOT_DIR"
+    mkdir -p "$BOT_DIR/core"
+    mkdir -p "$TEMPLATES_DIR"
+    mkdir -p "$KEENSNAP_DIR"
+    echo "✅ Директории созданы"
+
+    # ✅ Установка основных файлов бота (критично для запуска!)
+    echo "Загрузка файлов бота..."
+    curl -s -o "$BOT_DIR/main.py" "$BOT_URL/main.py" || exit 1
+    curl -s -o "$BOT_DIR/handlers.py" "$BOT_URL/handlers.py" || exit 1
+    curl -s -o "$BOT_DIR/menu.py" "$BOT_URL/menu.py" || exit 1
+    curl -s -o "$BOT_DIR/utils.py" "$BOT_URL/utils.py" || exit 1
+    curl -s -o "$BOT_DIR/bot_config.py" "$BOT_URL/bot_config.py" || exit 1
+    curl -s -o "$BOT_DIR/version.md" "$BOT_URL/version.md" || exit 1
+    echo "✅ Основные файлы бота загружены"
+
+    # ✅ Установка core модулей
+    echo "Загрузка core модулей..."
+    mkdir -p "$BOT_DIR/core"
+    curl -s -o "$BOT_DIR/core/config.py" "$BASE_URL/src/core/config.py" || exit 1
+    curl -s -o "$BOT_DIR/core/env_parser.py" "$BASE_URL/src/core/env_parser.py" || exit 1
+    curl -s -o "$BOT_DIR/core/http_client.py" "$BASE_URL/src/core/http_client.py" || exit 1
+    curl -s -o "$BOT_DIR/core/logging.py" "$BASE_URL/src/core/logging.py" || exit 1
+    curl -s -o "$BOT_DIR/core/logging_async.py" "$BASE_URL/src/core/logging_async.py" || exit 1
+    curl -s -o "$BOT_DIR/core/parsers.py" "$BASE_URL/src/core/parsers.py" || exit 1
+    curl -s -o "$BOT_DIR/core/services.py" "$BASE_URL/src/core/services.py" || exit 1
+    curl -s -o "$BOT_DIR/core/validators.py" "$BASE_URL/src/core/validators.py" || exit 1
+    curl -s -o "$BOT_DIR/core/backup.py" "$BASE_URL/src/core/backup.py" || exit 1
+    curl -s -o "$BOT_DIR/core/handlers_shared.py" "$BASE_URL/src/core/handlers_shared.py" || exit 1
+    curl -s -o "$BOT_DIR/core/__init__.py" "$BASE_URL/src/core/__init__.py" || exit 1
+    echo "✅ Core модули загружены"
+
+    # Установка прав на файлы бота
+    chmod 755 "$BOT_DIR"
+    chmod 644 "$BOT_DIR"/*.py
+    chmod 755 "$BOT_DIR"/S99*
+    echo "✅ Права на файлы установлены"
+
+    # ✅ Обновление дополнительных файлов (для consistency с -update)
+    echo "Загрузка дополнительных файлов..."
+    curl -s -o "$TEMPLATES_DIR/tor_template.torrc" "$BASE_URL/tor_template.torrc" && echo "✅ Шаблон Tor загружен"
+    curl -s -o "$BOT_DIR/S99unblock" "$BOT_URL/S99unblock" || exit 1
+    chmod 755 "$BOT_DIR/S99unblock"
+    echo "✅ Дополнительные файлы загружены"
+
+    # Установка скрипта перенаправления (с настройкой переменных)
     curl -s -o "$REDIRECT_SCRIPT" "$BASE_URL/100-redirect.sh" || exit 1
     sed -i -e "s/hash:net/${set_type}/g" \
            -e "s/192.168.1.1/${lanip}/g" \

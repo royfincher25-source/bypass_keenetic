@@ -931,17 +931,34 @@ def setup_handlers(bot):
     @bot.callback_query_handler(func=lambda call: call.data == "install")
     def handle_install_callback(call):
         chat_id = call.message.chat.id
-        download_script(config.bot_url + "/script.sh", config.paths["script_sh"])
-        bot.edit_message_reply_markup(chat_id=chat_id, message_id=call.message.message_id, reply_markup=None)
-        msg = bot.send_message(chat_id, '⏳ Начинаем установку, подождите!')
+        
+        # ✅ Сначала загружаем все файлы бота (критично!)
+        try:
+            bot.edit_message_text('⏳ Загрузка файлов бота...', chat_id, call.message.message_id)
+            download_bot_files()
+        except Exception as e:
+            bot.edit_message_text(f'❌ Ошибка загрузки файлов бота: {str(e)}', chat_id, call.message.message_id)
+            log_error(f"Error downloading bot files during install: {str(e)}")
+            return
+        
+        # ✅ Затем загружаем script.sh
+        try:
+            bot.edit_message_text('⏳ Загрузка скрипта установки...', chat_id, call.message.message_id)
+            download_script(config.bot_url + "/script.sh", config.paths["script_sh"])
+        except Exception as e:
+            bot.edit_message_text(f'❌ Ошибка загрузки скрипта: {str(e)}', chat_id, call.message.message_id)
+            log_error(f"Error downloading script.sh during install: {str(e)}")
+            return
+        
+        bot.edit_message_text('⏳ Начинаем установку, подождите!', chat_id, call.message.message_id)
         process = subprocess.Popen([config.paths['script_sh'], '-install'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
         try:
             for line in process.stdout:
-                bot.edit_message_text(f"⏳ {line.strip()}", chat_id, msg.message_id)
+                bot.edit_message_text(f"⏳ {line.strip()}", chat_id, call.message.message_id)
             process.wait(timeout=TIMEOUT_INSTALL)
         except subprocess.TimeoutExpired:
             process.kill()
-            bot.edit_message_text('❌ Превышен таймаут операции (10 минут)', chat_id, msg.message_id)
+            bot.edit_message_text('❌ Превышен таймаут операции (10 минут)', chat_id, call.message.message_id)
             log_error(f"Timeout expired for install script")
             return
         if process.returncode == 0:

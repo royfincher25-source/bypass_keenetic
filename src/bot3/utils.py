@@ -644,10 +644,10 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
 
     # Нормализация URL (удаление лишних символов, пробелов)
     key = key.strip()
-    
+
     # Удаление невидимых символов (zero-width spaces, etc.)
     key = ''.join(c for c in key if ord(c) >= 32 or c in '\t\n\r')
-    
+
     # Замена кириллических символов на латинские (частая проблема)
     cyrillic_to_latin = {
         'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'у': 'y', 'х': 'x',
@@ -656,21 +656,21 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
     }
     for cyr, lat in cyrillic_to_latin.items():
         key = key.replace(cyr, lat)
-    
+
     # URL decode (если есть %XX символы)
     key = unquote(key)
-    
+
     # Принудительная кодировка ASCII (замена не-ASCII символов)
     try:
         key = key.encode('ascii', 'ignore').decode('ascii')
     except Exception as e:
         log_error(f"Shadowsocks ASCII encode error: {e}")
-    
+
     log_error(f"Shadowsocks normalized key: {key[:80]}...")
 
     url = key[5:]
     parsed_url = urlparse(url)
-    
+
     # Логирование для отладки
     log_error(f"Shadowsocks urlparse: hostname={parsed_url.hostname}, username={parsed_url.username}, port={parsed_url.port}")
 
@@ -682,9 +682,12 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
         if not port or not (1 <= port <= 65535):
             raise ValueError(f"Порт должен быть от 1 до 65535")
 
-        # Декодирование base64
+        # Декодирование base64 (с поддержкой URL-safe base64)
         try:
             encoded = parsed_url.username
+            # URL-safe base64 использует - и _ вместо + и /
+            encoded = encoded.replace('-', '+').replace('_', '/')
+            # Добавляем padding
             padding = 4 - (len(encoded) % 4)
             if padding != 4:
                 encoded += '=' * padding
@@ -718,30 +721,31 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
         # Убираем ss:// и #name
         url_part = url.split('#')[0]
         log_error(f"Shadowsocks url_part: {url_part[:80]}...")
-        
+
         # Ищем последнюю @ (разделитель между base64 и server:port)
         at_index = url_part.rfind('@')
         if at_index > 0:
             encoded = url_part[:at_index]
             server_port = url_part[at_index+1:]
             log_error(f"Shadowsocks manual: encoded={encoded[:50]}..., server_port={server_port}")
-            
+
             # Парсим server:port
             if ':' in server_port:
                 server, port_str = server_port.rsplit(':', 1)
                 port = int(port_str)
                 if not (1 <= port <= 65535):
                     raise ValueError(f"Порт должен быть от 1 до 65535")
-                
-                # Декодируем base64
+
+                # Декодируем base64 (с поддержкой URL-safe base64)
+                encoded = encoded.replace('-', '+').replace('_', '/')
                 padding = 4 - (len(encoded) % 4)
                 if padding != 4:
                     encoded += '=' * padding
-                
+
                 decoded = base64.b64decode(encoded).decode('utf-8')
                 log_error(f"Shadowsocks manual decoded: {decoded}")
                 method, password = decoded.split(':', 1)
-                
+
                 result = {
                     'server': server,
                     'port': port,
@@ -754,11 +758,13 @@ def parse_shadowsocks_key(key, bot=None, chat_id=None):
     except Exception as e:
         log_error(f"Shadowsocks manual error: {e}")
         pass
-    
+
     # Старый альтернативный метод
     try:
         # Пробуем декодировать весь путь как base64
         encoded = url.split('#')[0]  # Убираем #name
+        # URL-safe base64
+        encoded = encoded.replace('-', '+').replace('_', '/')
         padding = 4 - (len(encoded) % 4)
         if padding != 4:
             encoded += '=' * padding
