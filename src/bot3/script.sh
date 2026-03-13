@@ -242,6 +242,7 @@ if [ "$1" = "-install" ]; then
     curl -s -o "$BOT_DIR/utils.py" "$BOT_URL/utils.py" || exit 1
     curl -s -o "$BOT_DIR/bot_config.py" "$BOT_URL/bot_config.py" || exit 1
     curl -s -o "$BOT_DIR/version.md" "$BOT_URL/version.md" || exit 1
+    curl -s -o "$BOT_DIR/.env.example" "$BASE_URL/.env.example" || echo "⚠️ Не удалось загрузить .env.example"
     echo "✅ Основные файлы бота загружены"
 
     # ✅ Установка core модулей

@@ -104,13 +104,25 @@ chmod 644 /opt/etc/bot/bot_config.py
 > **Остальные файлы бота будут загружены автоматически** при установке через Telegram-бот!
 > Ручная загрузка `main.py`, `handlers.py`, `menu.py`, `utils.py` и core модулей **не требуется**.
 
-5) Заполнить ключ api бота и другие данные для авторизации в telegram через nano или любым другим способом, сохранить файл
+5) Создать и настроить .env файл
 ```bash
-opkg install nano
+cp /opt/etc/bot/.env.example /opt/etc/bot/.env
 ```
 ```bash
-nano /opt/etc/bot/bot_config.py
+nano /opt/etc/bot/.env
 ```
+
+Заполните следующие параметры:
+- `TELEGRAM_BOT_TOKEN` - токен от @BotFather
+- `TELEGRAM_USERNAMES` - ваш логин Telegram (без @)
+- `TELEGRAM_USER_IDS` - ваш user_id (рекомендуется)
+- `ROUTER_IP` - IP-адрес роутера (обычно 192.168.1.1)
+
+> [!IMPORTANT]
+> Файл `.env` содержит чувствительные данные! Установите права:
+> ```bash
+> chmod 600 /opt/etc/bot/.env
+> ```
 
 6) Запустить бота
 ```bash
