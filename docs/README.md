@@ -50,7 +50,6 @@ docs/
 | **CHANGELOG.md** | История изменений (v3.5.51) |
 | **SETUP.md** | Полная инструкция по установке |
 | **DEPLOYMENT.md** | Инструкция по развёртыванию изменений |
-| **UPDATE_INSTRUCTION.md** | Обновление бота на роутере |
 | **.env.example** | Шаблон конфигурации |
 
 ---
@@ -60,7 +59,7 @@ docs/
 ### Для пользователей
 
 1. **Установка:** Подробно в [README.md](../README.md) или [SETUP.md](../SETUP.md)
-2. **Обновление:** [UPDATE_INSTRUCTION.md](UPDATE_INSTRUCTION.md)
+2. **Обновление:** Через Telegram бота (меню `⚙️ Сервис` → `🆕 Обновления`)
 3. **Бэкапы:** [docs/user/BACKUP_INSTRUCTION.md](docs/user/BACKUP_INSTRUCTION.md)
 4. **Переход на форк:** [docs/user/MIGRATION.md](docs/user/MIGRATION.md)
 5. **Логи:** [docs/user/LOGS_INSTRUCTION.md](docs/user/LOGS_INSTRUCTION.md)

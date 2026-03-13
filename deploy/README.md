@@ -242,7 +242,7 @@ ssh admin@192.168.1.1 "tail -20 /opt/etc/bot/error.log"
 ## 🔗 Ссылки
 
 - [Инструкция по установке](../SETUP.md)
-- [Инструкция по обновлению](../UPDATE_INSTRUCTION.md)
+- [Обновление через Telegram бота](../README.md#Обновление-бота)
 - [Документация по скриптам](../scripts/README.md)
 
 ---
