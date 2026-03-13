@@ -198,6 +198,71 @@ nano /opt/etc/bot/.env
 
 Заполните `.env` (см. раздел [Конфигурация](#конфигурация)).
 
+---
+
+### ⚠️ Важно: Проверка bot_config.py
+
+**После загрузки bot_config.py обязательно проверьте правильность URL!**
+
+```bash
+# Открыть bot_config.py
+nano /opt/etc/bot/bot_config.py
+```
+
+**Найдите строки (примерно строки 15-20):**
+
+```python
+# Базовый URL для загрузки файлов
+base_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main"
+bot_url = base_url + "/src/bot3"
+```
+
+**✅ ПРАВИЛЬНО:**
+
+```python
+base_url = "https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main"
+bot_url = base_url + "/src/bot3"
+```
+
+**❌ НЕПРАВИЛЬНО (так быть не должно):**
+
+```python
+# Ошибка 1: Используется github.com вместо raw.githubusercontent.com
+base_url = "https://github.com/royfincher25-source/bypass_keenetic/blob/main"
+
+# Ошибка 2: URL другого форка
+base_url = "https://raw.githubusercontent.com/Ziwork/bypass_keenetic/main"
+
+# Ошибка 3: Неправильный путь
+bot_url = base_url + "/bot3"  # Должно быть /src/bot3
+```
+
+**Если нашли ошибку — исправьте:**
+
+1. Замените неправильный URL на правильный
+2. Сохраните: `Ctrl+O` → `Enter` → `Ctrl+X`
+3. Перезапустите бота:
+
+```bash
+# Очистить кэш
+rm -rf /opt/etc/bot/__pycache__
+rm -rf /opt/etc/bot/core/__pycache__
+
+# Перезапустить
+/opt/etc/init.d/S99telegram_bot restart
+```
+
+**Проверка:**
+
+```bash
+# Проверить base_url
+grep base_url /opt/etc/bot/bot_config.py
+
+# Проверить version.md
+curl -L https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/version.md
+# Должно вернуть: 3.5.51
+```
+
 ### Шаг 4: Запуск бота
 
 ```bash
