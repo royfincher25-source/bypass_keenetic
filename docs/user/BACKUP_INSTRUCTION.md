@@ -1,7 +1,7 @@
 # 📦 Архивирование и восстановление бэкапа
 
-**Версия:** 3.5.6  
-**Дата:** 9 марта 2026 г.
+**Версия:** 3.5.51
+**Дата:** 13 марта 2026 г.
 
 ---
 
@@ -16,13 +16,116 @@
 
 ## 📋 Что входит в бэкап
 
-### ✅ Сохраняется:
+### **4 группы файлов:**
+
+| Группа | Файлы | Размер | Включено по умолчанию |
+|--------|-------|--------|----------------------|
+| **Startup Config** | Конфигурация роутера | ~100 KB | ✅ |
+| **Firmware** | Прошивка роутера | ~20 MB | ✅ |
+| **Entware** | Пакеты Entware | ~50-500 MB | ✅ |
+| **Custom Files** | Файлы бота и сервисов | ~5-10 MB | ✅ |
+
+**Итоговый размер:** ~75-530 MB
+
+---
+
+### 🔍 Детальный список
+
+#### **1. Startup Config** (`BACKUP_STARTUP_CONFIG=true`)
+
+**Файл:** `${DEVICE_ID}_${FW_VERSION}_startup-config.txt`
+
+**Что сохраняется:**
+- Конфигурация роутера из `startup-config`
+- Все настройки Keenetic (интерфейсы, DNS, маршрутизация)
+- Настройки бота и разблокировок
+
+---
+
+#### **2. Firmware** (`BACKUP_FIRMWARE=true`)
+
+**Файл:** `${DEVICE_ID}_${FW_VERSION}_firmware.bin`
+
+**Что сохраняется:**
+- Текущая прошивка роутера
+- Версия: `stable_4.03.C.6.3-9` (или ваша)
+
+**Размер:** ~20 MB
+
+---
+
+#### **3. Entware** (`BACKUP_ENTWARE=true`)
+
+**Файл:** `${ARCH}-installer.tar.gz` (например, `mipsel-installer.tar.gz`)
+
+**Что сохраняется:**
+| Путь | Описание | Размер |
+|------|----------|--------|
+| `/opt/bin/` | Исполняемые файлы | ~20 MB |
+| `/opt/etc/` | Конфигурационные файлы | ~5 MB |
+| `/opt/lib/` | Библиотеки | ~100 MB |
+| `/opt/sbin/` | Системные утилиты | ~10 MB |
+| `/opt/share/` | Данные | ~5 MB |
+
+**Исключения (не сохраняются):**
+```
+/opt/root/KeenSnap/*.tar.gz  # Старые бэкапы
+/opt/var/cache/*             # Кеш пакетов
+/opt/var/log/*.log           # Логи
+/opt/var/log/*.gz            # Архивы логов
+/opt/tmp/*                   # Временные файлы
+```
+
+**Проверка валидности:**
+- ✅ Архив должен содержать `bin/`, `etc/`, `lib/`
+- ✅ Размер > 1 KB
+
+---
+
+#### **4. Custom Files** (`BACKUP_CUSTOM_FILES=true`)
+
+**Файл:** `${DEVICE_ID}_backup*_custom-files.tar.gz`
+
+**Что сохраняется (из `bot_config.py`):**
+
+```python
+CUSTOM_BACKUP_PATHS = " ".join([
+    "/opt/etc/bot",              # Вся папка бота
+    "/opt/etc/xray/config.json", # Конфигурация VLESS
+    "/opt/etc/tor/torrc",        # Конфигурация Tor
+    "/opt/root/script.sh",       # Скрипт установки
+    "/opt/root/KeenSnap/keensnap.sh",  # Скрипт бэкапа
+])
+```
+
+**Детальный список:**
+
+| Путь | Файлы | Размер |
+|------|-------|--------|
+| **`/opt/etc/bot/`** | **Вся папка бота** | **~5-10 MB** |
+| ├─ `main.py` | Точка входа | ~50 KB |
+| ├─ `handlers.py` | Обработчики команд | ~100 KB |
+| ├─ `menu.py` | Меню бота | ~10 KB |
+| ├─ `utils.py` | Утилиты | ~50 KB |
+| ├─ `bot_config.py` | Конфигурация | ~5 KB |
+| ├─ `version.md` | Версия бота | ~1 KB |
+| ├─ `.env.example` | Шаблон .env | ~3 KB |
+| ├─ `S99telegram_bot` | Init скрипт | ~2 KB |
+| ├─ `S99unblock` | Init скрипт | ~2 KB |
+| └─ `core/` | **Core модули (11 файлов)** | **~100 KB** |
+| **`/opt/etc/xray/config.json`** | Конфиг VLESS | ~2 KB |
+| **`/opt/etc/tor/torrc`** | Конфиг Tor | ~1 KB |
+| **`/opt/root/script.sh`** | Скрипт установки | ~20 KB |
+| **`/opt/root/KeenSnap/keensnap.sh`** | Скрипт бэкапа | ~10 KB |
+
+---
+
+### ✅ Сохраняется (кратко):
 
 | Файл/Папка | Назначение |
 |------------|------------|
 | `/opt/etc/bot/` | Все файлы бота (main.py, handlers.py, utils.py, bot_config.py) |
 | `/opt/etc/bot/core/` | Core модули (config.py, env_parser.py, http_client.py, etc.) |
-| `/opt/etc/bot/.env` | Конфигурация (токен, настройки) |
 | `/opt/etc/unblock/*.txt` | Списки обхода |
 | `/opt/etc/tor/torrc` | Конфигурация Tor |
 | `/opt/etc/shadowsocks.json` | Конфигурация Shadowsocks |
@@ -41,6 +144,9 @@
 | `__pycache__/` | Кэш Python (генерируется заново) |
 | `error.log` | Логи (не нужны для восстановления) |
 | `/opt/root/bot_backup_*/` | Старые бэкапы |
+| `/opt/var/cache/*` | Кеш пакетов Entware |
+| `/opt/var/log/*.log` | Логи |
+| `/opt/tmp/*` | Временные файлы |
 
 ---
 

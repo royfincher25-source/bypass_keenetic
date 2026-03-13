@@ -11,8 +11,7 @@
 docs/
 ├── user/                           # Пользовательская документация
 │   ├── BACKUP_CHEATSHEET.md       # Шпаргалка по бэкапам
-│   ├── BACKUP_FILES_LIST.md       # Полный список файлов бэкапа
-│   ├── BACKUP_INSTRUCTION.md      # Полная инструкция по бэкапам
+│   ├── BACKUP_INSTRUCTION.md      # Полная инструкция по бэкапам (список файлов)
 │   ├── CREATE_ENV.md              # Настройка .env
 │   ├── MIGRATION.md               # Переход на этот форк (Ziwork/tas-unn)
 │   └── LOGS_INSTRUCTION.md        # Работа с логами
