@@ -49,7 +49,6 @@ docs/
 | **README.md** | Главный файл проекта с описанием и скриншотами |
 | **CHANGELOG.md** | История изменений (v3.5.51) |
 | **SETUP.md** | Полная инструкция по установке |
-| **DEPLOYMENT.md** | Инструкция по развёртыванию изменений |
 | **.env.example** | Шаблон конфигурации |
 
 ---
@@ -66,10 +65,9 @@ docs/
 
 ### Для разработчиков
 
-1. **Развёртывание:** [DEPLOYMENT.md](DEPLOYMENT.md)
-2. **Логирование:** [docs/developer/LOGGING_OPTIMIZATION.md](docs/developer/LOGGING_OPTIMIZATION.md)
-3. **Рефакторинг:** [docs/developer/REFACTORING_INSTRUCTION.md](docs/developer/REFACTORING_INSTRUCTION.md)
-4. **Анализ кода:** [docs/analysis/](docs/analysis/)
+1. **Логирование:** [docs/developer/LOGGING_OPTIMIZATION.md](docs/developer/LOGGING_OPTIMIZATION.md)
+2. **Рефакторинг:** [docs/developer/REFACTORING_INSTRUCTION.md](docs/developer/REFACTORING_INSTRUCTION.md)
+3. **Анализ кода:** [docs/analysis/](docs/analysis/)
 
 ---
 

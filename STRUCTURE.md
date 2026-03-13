@@ -103,7 +103,6 @@ bypass_keenetic-main/
 │   ├── README.md                     # Главный файл проекта
 │   ├── CHANGELOG.md                  # История изменений
 │   ├── SETUP.md                      # Инструкция установки
-│   ├── DEPLOYMENT.md                 # Развёртывание
 │   │
 │   ├── .env.example                  # Шаблон конфигурации
 │   ├── .gitignore                    # Git игнор
@@ -229,7 +228,6 @@ tools\push_to_github.bat "Описание изменений"
 | Задача | Файл |
 |--------|------|
 | Документация | [docs/README.md](docs/README.md) |
-| Развёртывание | [DEPLOYMENT.md](DEPLOYMENT.md) |
 | Тесты | [tests/](tests/) |
 | Скрипты | [scripts/README.md](scripts/README.md) |
 | Production файлы | [deploy/README.md](deploy/README.md) |
