@@ -273,7 +273,11 @@ curl -L https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/ma
 FileNotFoundError: [Errno 2] No such file or directory: '/opt/etc/bot/S99telegram_bot'
 ```
 
-**Это означает, что в config.py указан неправильный путь!**
+**Это означает, что в config.py отсутствует секция `services`!**
+
+**✅ В актуальной версии (3.5.51) эта проблема уже исправлена!**
+
+**Если у вас старая версия — обновите бота или исправьте вручную:**
 
 **Проверка и исправление:**
 
@@ -283,35 +287,39 @@ grep service_script /opt/etc/bot/core/config.py
 
 # Если видите:
 # 'service_script': '/opt/etc/bot/S99telegram_bot'  ❌ НЕПРАВИЛЬНО!
+# или секция services отсутствует
 ```
 
 **Исправить (выберите один из вариантов):**
 
-**Вариант A: Автоматически (sed):**
+**Вариант A: Обновить бота (рекомендуется)**
 
 ```bash
-sed -i 's|/opt/etc/bot/S99telegram_bot|/opt/etc/init.d/S99telegram_bot|g' /opt/etc/bot/core/config.py
+# Использовать меню бота в Telegram:
+# ⚙️ Сервис → 🆕 Обновления → 🔄 Обновить
 ```
 
-**Вариант B: Вручную (nano):**
+**Вариант B: Добавить секцию вручную (nano):**
 
 ```bash
 nano /opt/etc/bot/core/config.py
 ```
 
-**Найти (примерно строка 80-100):**
+**Найти (примерно строка 60-70):**
 
 ```python
-services = {
-    'service_script': '/opt/etc/bot/S99telegram_bot',  # ❌ НЕПРАВИЛЬНО
-}
+# Backup
+self.backup_max_size_mb = get_env_int('BACKUP_MAX_SIZE_MB', 45)
+
+Config._initialized = True
 ```
 
-**Заменить на:**
+**Добавить ПОСЛЕ backup_max_size_mb:**
 
 ```python
-services = {
-    'service_script': '/opt/etc/init.d/S99telegram_bot',  # ✅ ПРАВИЛЬНО
+# Services
+self.services = {
+    'service_script': '/opt/etc/init.d/S99telegram_bot',
 }
 ```
 
