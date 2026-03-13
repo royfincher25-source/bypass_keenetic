@@ -103,7 +103,6 @@ bypass_keenetic-main/
 │   ├── README.md                     # Главный файл проекта
 │   ├── CHANGELOG.md                  # История изменений
 │   ├── SETUP.md                      # Инструкция установки
-│   ├── QUICKSTART.md                 # Быстрый старт
 │   ├── DEPLOYMENT.md                 # Развёртывание
 │   ├── UPDATE_INSTRUCTION.md         # Обновление бота
 │   │
@@ -220,11 +219,11 @@ tools\push_to_github.bat "Описание изменений"
 
 | Задача | Файл |
 |--------|------|
-| Установка | [SETUP.md](SETUP.md) |
-| Быстрый старт | [QUICKSTART.md](QUICKSTART.md) |
+| Установка | [README.md](README.md) или [SETUP.md](SETUP.md) |
 | Обновление | [UPDATE_INSTRUCTION.md](UPDATE_INSTRUCTION.md) |
 | Бэкапы | [docs/user/BACKUP_INSTRUCTION.md](docs/user/BACKUP_INSTRUCTION.md) |
 | Логи | [docs/user/LOGS_INSTRUCTION.md](docs/user/LOGS_INSTRUCTION.md) |
+| Переход на форк | [docs/user/MIGRATION.md](docs/user/MIGRATION.md) |
 
 ### Для разработчиков
 
