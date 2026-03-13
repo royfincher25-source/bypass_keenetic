@@ -80,31 +80,29 @@ pip3 install --upgrade pip
 pip3 install pyTelegramBotAPI==4.27.0
 ```
 
-4) Загрузить бота
+4) Скачать конфигурационный файл бота и скрипт установки
 ```bash
 mkdir -p /opt/etc/bot
-```
-```bash
-curl -o /opt/etc/bot/main.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/main.py
-```
-```bash
-curl -o /opt/etc/bot/menu.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/menu.py
-```
-```bash
-curl -o /opt/etc/bot/utils.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/utils.py
-```
-```bash
-curl -o /opt/etc/bot/handlers.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/handlers.py
 ```
 ```bash
 curl -o /opt/etc/bot/bot_config.py https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/bot_config.py
 ```
 ```bash
-chmod 755 /opt/etc/bot
+mkdir -p /opt/root
 ```
 ```bash
-chmod 644 /opt/etc/bot/*.py
+curl -o /opt/root/script.sh https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/main/src/bot3/script.sh
 ```
+```bash
+chmod 755 /opt/root/script.sh
+```
+```bash
+chmod 644 /opt/etc/bot/bot_config.py
+```
+
+> [!TIP]
+> **Остальные файлы бота будут загружены автоматически** при установке через Telegram-бот!
+> Ручная загрузка `main.py`, `handlers.py`, `menu.py`, `utils.py` и core модулей **не требуется**.
 
 5) Заполнить ключ api бота и другие данные для авторизации в telegram через nano или любым другим способом, сохранить файл
 ```bash
