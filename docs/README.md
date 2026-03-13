@@ -23,19 +23,6 @@ docs/
 ├── analysis/                       # Аналитика
 │   ├── ASYNCIO_ANALYSIS.md        # Анализ asyncio
 │   └── DEDUPLICATION_ANALYSIS.md  # Анализ дублирования кода
-│
-├── plans/archive/                  # Архив планов
-│   ├── 2026-03-08-bot-memory-optimization.md
-│   └── 2026-03-09-router-optimization.md
-│
-└── archive/                        # Исторические документы
-    ├── AUDIT_CHANGES.md
-    ├── AUDIT_COMPLETE.md
-    ├── IMPLEMENTATION_REPORT.md
-    ├── OPTIMIZATION_REPORT.md
-    ├── PUSH_TO_GITHUB.md
-    ├── QUICK_ARCHIVE.md
-    └── SAVE_CONFIG_GUIDE.md
 ```
 
 ---

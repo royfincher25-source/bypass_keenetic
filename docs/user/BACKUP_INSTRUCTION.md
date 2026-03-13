@@ -536,11 +536,44 @@ rm /mnt/disk1/backup_2026-03-01_12-00.tar.gz
 
 ---
 
+## ⚡ Быстрые команды (шпаргалка)
+
+```bash
+# Создать бэкап
+/opt/root/KeenSnap/keensnap.sh LOG_FILE=/opt/root/KeenSnap/backup.log SELECTED_DRIVE=/tmp/mnt/USB_DISK BACKUP_STARTUP_CONFIG=true BACKUP_ENTWARE=true
+
+# Проверить список бэкапов
+ls -la /tmp/mnt/USB_DISK/KN-1212_backup*.tar.gz
+
+# Восстановить из бэкапа (распаковать)
+cd /tmp
+tar -xzf /tmp/mnt/USB_DISK/KN-1212_backup*.tar.gz
+
+# Удалить старый бэкап
+rm /tmp/mnt/USB_DISK/KN-1212_backup*.tar.gz
+```
+
+### Перед изменениями:
+
+```bash
+# 1. Создать бэкап
+/opt/root/KeenSnap/keensnap.sh LOG_FILE=/opt/root/KeenSnap/backup.log SELECTED_DRIVE=/tmp/mnt/USB_DISK BACKUP_STARTUP_CONFIG=true BACKUP_FIRMWARE=true BACKUP_ENTWARE=true
+
+# 2. Проверить
+ls -lh /tmp/mnt/USB_DISK/KN-1212_backup*.tar.gz
+
+# 3. Внести изменения
+# ...
+
+# 4. Если что-то не так — восстановить
+# Распаковать и скопировать файлы обратно
+```
+
+---
+
 ## 🔗 Ссылки
 
-- [KeenSnap — автоматизация бэкапов](../analysis/BACKUP_OPTIMIZATION_PLAN.md)
-- [Оптимизация алгоритма архивации](../analysis/BACKUP_OPTIMIZATION_PLAN.md)
-- [Шпаргалка по бэкапам](BACKUP_CHEATSHEET.md)
+- [Анализ и оптимизация бэкапов](../analysis/BACKUP_OPTIMIZATION_PLAN.md)
 
 ---
 

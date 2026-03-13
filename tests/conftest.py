@@ -32,12 +32,6 @@ def bot3_dir(root_dir):
     return root_dir / 'src' / 'bot3'
 
 
-@pytest.fixture(scope='session')
-def botlight_dir(root_dir):
-    """Директория botlight"""
-    return root_dir / 'src' / 'botlight'
-
-
 @pytest.fixture
 def mock_env(monkeypatch):
     """Фикстура для мокания переменных окружения"""
