@@ -263,6 +263,80 @@ curl -L https://raw.githubusercontent.com/royfincher25-source/bypass_keenetic/ma
 # Должно вернуть: 3.5.51
 ```
 
+---
+
+### ⚠️ Важно: Проверка пути к сервисному скрипту
+
+**Если при перезапуске бота возникает ошибка:**
+
+```
+FileNotFoundError: [Errno 2] No such file or directory: '/opt/etc/bot/S99telegram_bot'
+```
+
+**Это означает, что в config.py указан неправильный путь!**
+
+**Проверка и исправление:**
+
+```bash
+# 1. Проверить текущий путь
+grep service_script /opt/etc/bot/core/config.py
+
+# Если видите:
+# 'service_script': '/opt/etc/bot/S99telegram_bot'  ❌ НЕПРАВИЛЬНО!
+```
+
+**Исправить (выберите один из вариантов):**
+
+**Вариант A: Автоматически (sed):**
+
+```bash
+sed -i 's|/opt/etc/bot/S99telegram_bot|/opt/etc/init.d/S99telegram_bot|g' /opt/etc/bot/core/config.py
+```
+
+**Вариант B: Вручную (nano):**
+
+```bash
+nano /opt/etc/bot/core/config.py
+```
+
+**Найти (примерно строка 80-100):**
+
+```python
+services = {
+    'service_script': '/opt/etc/bot/S99telegram_bot',  # ❌ НЕПРАВИЛЬНО
+}
+```
+
+**Заменить на:**
+
+```python
+services = {
+    'service_script': '/opt/etc/init.d/S99telegram_bot',  # ✅ ПРАВИЛЬНО
+}
+```
+
+**Сохранить:** `Ctrl+O` → `Enter` → `Ctrl+X`
+
+**Проверка:**
+
+```bash
+# Проверить путь
+grep service_script /opt/etc/bot/core/config.py
+
+# Должно быть:
+# 'service_script': '/opt/etc/init.d/S99telegram_bot'
+
+# Проверить существование скрипта
+ls -la /opt/etc/init.d/S99telegram_bot
+
+# Перезапустить бота
+rm -rf /opt/etc/bot/__pycache__ /opt/etc/bot/core/__pycache__
+/opt/etc/init.d/S99telegram_bot restart
+tail -20 /opt/etc/bot/error.log
+```
+
+---
+
 ### Шаг 4: Запуск бота
 
 ```bash
