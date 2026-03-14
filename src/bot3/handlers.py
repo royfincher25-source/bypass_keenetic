@@ -139,7 +139,17 @@ def setup_handlers(bot):
         elif message.text == 'Shadowsocks':
             set_menu_and_reply(message.chat.id, get_menu_shadowsocks(), "🔑 Вставьте ключ Shadowsocks")
         elif message.text == 'Vless':
-            set_menu_and_reply(message.chat.id, get_menu_vless(), "🔑 Вставьте ключ Vless")
+            reply = (
+                "🔑 Вставьте ключ VLESS\n\n"
+                "📝 Поддерживаемые форматы:\n"
+                "• VLESS + REALITY (рекомендуется)\n"
+                "• VLESS + TLS\n"
+                "• VLESS + none\n\n"
+                "📌 Пример ключа REALITY:\n"
+                "<code>vless://uuid@server:443?security=reality&pbk=PUBLIC_KEY&sid=SHORT_ID&fp=chrome</code>\n\n"
+                "📖 Инструкция: /vless_help"
+            )
+            set_menu_and_reply(message.chat.id, get_menu_vless(), reply)
         elif message.text == 'Trojan':
             set_menu_and_reply(message.chat.id, get_menu_trojan(), "🔑 Вставьте ключ Trojan")
         elif message.text == 'Нет активных сервисов':
@@ -589,6 +599,32 @@ def setup_handlers(bot):
             return
         stats = get_stats()
         bot.send_message(message.chat.id, format_stats_message(stats), reply_markup=create_stats_keyboard(stats))
+
+    @bot.message_handler(commands=['vless_help'])
+    def vless_help_command(message):
+        """Справка по VLESS + REALITY"""
+        if not check_authorization(message):
+            bot.send_message(message.chat.id, '⚠️ Доступ запрещён!')
+            return
+        
+        help_text = (
+            "📖 **VLESS + REALITY — Инструкция**\n\n"
+            "🔹 **Что такое REALITY?**\n"
+            "Современный протокол обхода блокировок с маскировкой под HTTPS.\n\n"
+            "🔹 **Преимущества:**\n"
+            "✅ Скорость до 300 Mbps\n"
+            "✅ Полная невидимость для DPI\n"
+            "✅ Не нужен свой домен\n\n"
+            "🔹 **Настройка сервера:**\n"
+            "1. Установите Xray на VPS\n"
+            "2. Сгенерируйте ключи: `xray x25519`\n"
+            "3. Настройте конфиг сервера\n\n"
+            "🔹 **Формат ключа:**\n"
+            "<code>vless://UUID@SERVER_IP:443?security=reality&pbk=PUBLIC_KEY&sid=SHORT_ID&fp=chrome</code>\n\n"
+            "📚 **Полная документация:**\n"
+            "https://github.com/royfincher25-source/bypass_keenetic/blob/main/docs/user/VLESS_REALITY.md"
+        )
+        bot.send_message(message.chat.id, help_text, parse_mode='HTML', disable_web_page_preview=True)
 
     # Обработчики команд управления сервисами
     @bot.message_handler(commands=['tor_on', 'tor_off', 'vless_on', 'vless_off', 'trojan_on', 'trojan_off', 'ss_on', 'ss_off'])

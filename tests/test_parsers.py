@@ -287,7 +287,104 @@ class TestParsersCommon:
             (parse_trojan_key, sample_trojan_key),
             (parse_shadowsocks_key, sample_shadowsocks_key)
         ]
-        
+
         for parser, key in test_cases:
             result = parser(key)
             assert isinstance(result, dict)
+
+
+# =============================================================================
+# ТЕСТЫ REALITY ВАЛИДАЦИИ
+# =============================================================================
+
+class TestParseVlessKeyReality:
+    """Тесты парсинга VLESS + REALITY ключей"""
+
+    def test_valid_reality_key(self):
+        """Валидный REALITY ключ"""
+        key = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&sid=1234567890abcdef&fp=chrome"
+        result = parse_vless_key(key)
+
+        assert result['security'] == 'reality'
+        assert result['pbk'] == 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+        assert result['sid'] == '1234567890abcdef'
+        assert result['fp'] == 'chrome'
+        assert result['flow'] == 'xtls-rprx-vision'  # Значение по умолчанию
+
+    def test_valid_reality_key_with_flow(self):
+        """REALITY ключ с явным flow"""
+        key = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&flow=xtls-rprx-vision"
+        result = parse_vless_key(key)
+
+        assert result['flow'] == 'xtls-rprx-vision'
+
+    def test_invalid_reality_public_key(self):
+        """Неверный publicKey"""
+        key = "vless://uuid@1.1.1.1:443?security=reality&pbk=short"
+
+        with pytest.raises(ValueError, match="Неверный формат publicKey"):
+            parse_vless_key(key)
+
+    def test_invalid_reality_short_id(self):
+        """Неверный shortId (слишком длинный)"""
+        key = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&sid=TOOLONG1234567890"
+
+        with pytest.raises(ValueError, match="Неверный формат shortId"):
+            parse_vless_key(key)
+
+    def test_invalid_reality_fingerprint(self):
+        """Неверный fingerprint"""
+        key = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&fp=invalid_fp"
+
+        with pytest.raises(ValueError, match="Неверный fingerprint"):
+            parse_vless_key(key)
+
+    def test_valid_reality_key_minimal(self):
+        """Минимальный валидный REALITY ключ"""
+        key = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        result = parse_vless_key(key)
+
+        assert result['security'] == 'reality'
+        assert result['pbk'] == 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+        assert result['sid'] == ''  # ShortId опционален
+        assert result['fp'] == ''   # Fingerprint опционален
+
+    def test_valid_reality_short_id_variations(self):
+        """Валидные варианты ShortId"""
+        # Пустой ShortId
+        key1 = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&sid="
+        result1 = parse_vless_key(key1)
+        assert result1['sid'] == ''
+
+        # Короткий ShortId (4 байта)
+        key2 = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&sid=abcd"
+        result2 = parse_vless_key(key2)
+        assert result2['sid'] == 'abcd'
+
+        # Максимальный ShortId (8 байт)
+        key3 = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&sid=1234567890abcdef"
+        result3 = parse_vless_key(key3)
+        assert result3['sid'] == '1234567890abcdef'
+
+    def test_valid_reality_fingerprint_variations(self):
+        """Валидные варианты fingerprint"""
+        valid_fps = ['chrome', 'firefox', 'safari', 'ios', 'android', 'edge', 'qq', 'random', 'randomized']
+
+        for fp in valid_fps:
+            key = f"vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&fp={fp}"
+            result = parse_vless_key(key)
+            assert result['fp'] == fp
+
+    def test_invalid_reality_short_id_not_hex(self):
+        """Неверный shortId (не hex символы)"""
+        key = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&sid=ghijklmnop"
+
+        with pytest.raises(ValueError, match="Неверный формат shortId"):
+            parse_vless_key(key)
+
+    def test_invalid_reality_short_id_too_long(self):
+        """Неверный shortId (>16 символов)"""
+        key = "vless://uuid@1.1.1.1:443?security=reality&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=&sid=1234567890abcdef12"
+
+        with pytest.raises(ValueError, match="Неверный формат shortId"):
+            parse_vless_key(key)

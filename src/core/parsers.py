@@ -7,57 +7,83 @@
 import os
 import re
 import json
-from urllib.parse import urlparse, parse_qs
 import base64
+from urllib.parse import urlparse, parse_qs
+
+from .validators import (
+    validate_reality_public_key,
+    validate_reality_short_id,
+    validate_reality_fingerprint
+)
 
 
 def parse_vless_key(key, bot=None, chat_id=None):
     """
     Парсинг VLESS ключа.
-    
+
     Args:
         key (str): VLESS ключ (vless://...)
         bot: TeleBot объект (опционально)
         chat_id (int): ID чата (опционально)
-    
+
     Returns:
         dict: Распарсенные данные ключа
-    
+
     Raises:
         ValueError: Неверный формат ключа
     """
     from .logging import log_error
-    
+
     if not key.startswith('vless://'):
         raise ValueError("Неверный формат ключа VLESS")
-    
+
     url = key[8:]
     parsed_url = urlparse(url)
-    
+
     if not parsed_url.hostname or not parsed_url.username:
         raise ValueError("Некорректные данные сервера")
-    
+
     port = parsed_url.port
     if not port or not (1 <= port <= 65535):
         raise ValueError(f"Порт должен быть от 1 до 65535")
-    
+
     params = parse_qs(parsed_url.query)
-    
+
     # Валидация параметров
     security = params.get('security', ['none'])[0]
     if security not in {'none', 'tls', 'reality'}:
         raise ValueError(f"Недопустимый security: {security}")
-    
+
     encryption = params.get('encryption', ['none'])[0]
     if encryption not in {'none', 'aes-128-gcm', 'chacha20-poly1305'}:
         raise ValueError(f"Недопустимый encryption: {encryption}")
-    
+
+    # ✅ Дополнительная валидация для REALITY
+    if security == 'reality':
+        pbk = params.get('pbk', [''])[0]
+        if pbk and not validate_reality_public_key(pbk):
+            raise ValueError(f"Неверный формат publicKey: {pbk[:20]}...")
+
+        sid = params.get('sid', [''])[0]
+        if not validate_reality_short_id(sid):
+            raise ValueError(f"Неверный формат shortId: {sid}")
+
+        fp = params.get('fp', [''])[0]
+        if not validate_reality_fingerprint(fp):
+            raise ValueError(f"Неверный fingerprint: {fp}")
+
+    # Извлечение flow (опционально, для REALITY)
+    flow = params.get('flow', [''])[0]
+    if security == 'reality' and not flow:
+        flow = 'xtls-rprx-vision'  # Значение по умолчанию для REALITY
+
     result = {
         'address': parsed_url.hostname,
         'port': port,
         'id': parsed_url.username,
         'security': security,
         'encryption': encryption,
+        'flow': flow,
         'type': params.get('type', ['tcp'])[0],
         'host': params.get('host', [''])[0],
         'path': params.get('path', [''])[0],
@@ -68,7 +94,7 @@ def parse_vless_key(key, bot=None, chat_id=None):
         'sid': params.get('sid', [''])[0],
         'spx': params.get('spx', [''])[0],
     }
-    
+
     return result
 
 

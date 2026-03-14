@@ -24,7 +24,7 @@
 	],
 	"outbounds": [
         {
-            "tag": "vless-reality",
+            "tag": "vless-outbound",
             "protocol": "vless",
             "settings": {
                 "vnext": [
@@ -43,7 +43,7 @@
                 ]
             },
             "streamSettings": {
-                "network": "tcp",
+                "network": "{{type}}",
                 "security": "{{security}}",
                 "realitySettings": {
                     "publicKey": "{{pbk}}",
@@ -69,13 +69,17 @@
         }
     ],
 	"routing":{
-		"domainStrategy":"IPIfNonMatch",
+		"domainStrategy":"UseIP",
 		"rules":[
 			{
 				"type":"field",
+				"ip":["geoip:private"],
+				"outboundTag":"direct"
+			},
+			{
+				"type":"field",
 				"port":"0-65535",
-				"outboundTag":
-				"proxy",
+				"outboundTag":"vless-outbound",
 				"enabled":true
 			}
 		]

@@ -5,6 +5,7 @@
 # =============================================================================
 
 import re
+import base64
 from typing import Union
 
 
@@ -159,5 +160,80 @@ def validate_bypass_entry(entry: str) -> bool:
     
     if validate_ip_cidr(entry):
         return True
-    
+
     return False
+
+
+# =============================================================================
+# REALITY ВАЛИДАТОРЫ
+# =============================================================================
+
+
+def validate_reality_public_key(public_key: str) -> bool:
+    """
+    Проверка валидности PUBLIC ключа REALITY.
+
+    REALITY использует X25519 ключи (32 байта, base64).
+
+    Args:
+        public_key: Базовая64 строка
+
+    Returns:
+        bool: True если ключ валиден
+    """
+    if not public_key or len(public_key) < 40:
+        return False
+
+    try:
+        decoded = base64.b64decode(public_key)
+        # X25519 public key = 32 байта
+        return len(decoded) == 32
+    except Exception:
+        return False
+
+
+def validate_reality_short_id(short_id: str) -> bool:
+    """
+    Проверка валидности ShortId.
+
+    ShortId — это 0-8 байт в hex формате.
+
+    Args:
+        short_id: Hex строка (0-16 символов)
+
+    Returns:
+        bool: True если ShortId валиден
+    """
+    # Пустой ShortId допустим
+    if not short_id:
+        return True
+
+    # Hex строка 0-16 символов (0-8 байт)
+    if not re.match(r'^[0-9a-fA-F]{0,16}$', short_id):
+        return False
+
+    return True
+
+
+def validate_reality_fingerprint(fp: str) -> bool:
+    """
+    Проверка валидности fingerprint.
+
+    Допустимые значения:
+    - chrome, firefox, safari, ios
+    - android, edge, qq
+    - random, randomized
+
+    Args:
+        fp: Строка fingerprint
+
+    Returns:
+        bool: True если fingerprint валиден
+    """
+    valid_fps = {
+        'chrome', 'firefox', 'safari', 'ios',
+        'android', 'edge', 'qq',
+        'random', 'randomized', ''
+    }
+
+    return fp.lower() in valid_fps
